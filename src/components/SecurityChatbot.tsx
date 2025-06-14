@@ -1,23 +1,35 @@
-
 import { useState, useEffect } from "react";
 import { Shield } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
-// Improved interview steps: "type" = "options"
+// Expanded interview steps with more options
 const interviewSteps = [
   {
     key: "topic",
     question: "What security issue or topic do you need help with?",
     type: "options",
     options: [
-      "Suspicious email",
-      "App permissions",
-      "Unsafe website",
-      "Virus/Malware",
-      "Phishing attempt",
-      "Lost/Stolen device",
-      "Data breach",
-      "Other"
+      "Suspicious email or message",
+      "App permissions and privacy",
+      "Unsafe website or pop-up",
+      "Virus/Malware detection",
+      "Phishing or scam attempt",
+      "Lost or stolen device",
+      "Data breach notification",
+      "Password security issues",
+      "Social media account hacked",
+      "Online banking security",
+      "Wi-Fi network security",
+      "Identity theft concerns",
+      "Ransomware attack",
+      "Cryptocurrency scam",
+      "Online shopping fraud",
+      "Two-factor authentication setup",
+      "VPN and privacy tools",
+      "Child safety online",
+      "Work device security",
+      "IoT device security",
+      "Other security concern"
     ]
   },
   {
@@ -25,25 +37,38 @@ const interviewSteps = [
     question: "What device are you using?",
     type: "options",
     options: [
-      "iPhone",
-      "Android Phone",
-      "Windows PC",
-      "Mac",
-      "Tablet",
-      "Other"
+      "iPhone/iOS device",
+      "Android phone/tablet",
+      "Windows PC/laptop",
+      "Mac/MacBook",
+      "Chromebook",
+      "Smart TV",
+      "Gaming console",
+      "Router/Network device",
+      "Smart home device",
+      "Work computer",
+      "Multiple devices",
+      "Other device"
     ]
   },
   {
     key: "details",
-    question: "Which best describes your concern?",
+    question: "Which best describes your current situation?",
     type: "options",
     options: [
       "I received a suspicious message or email",
-      "An app is acting strangely",
-      "A website gave me a warning",
-      "I think my device is infected",
-      "Account password may be stolen",
-      "Other/Not listed"
+      "An app is requesting unusual permissions",
+      "A website showed security warnings",
+      "My device is running slowly or acting strange",
+      "I think my password was compromised",
+      "I clicked on a suspicious link",
+      "I downloaded something questionable",
+      "My accounts show unusual activity",
+      "I need to secure my data",
+      "Someone else may have access to my device",
+      "I want to prevent future security issues",
+      "I'm not sure what the problem is",
+      "Other situation not listed"
     ]
   }
 ];
@@ -237,23 +262,25 @@ I will now analyze your situation and provide step-by-step advice.`;
       {/* Show input only if not finished submitting */}
       {(step < interviewSteps.length && !submitted) && (
         <div className="flex flex-col gap-2 mt-1 px-4 pb-3">
-          <RadioGroup
-            value={optionValue}
-            onValueChange={setOptionValue}
-            className="mb-2"
-          >
-            {interviewSteps[step].options.map((option: string) => (
-              <div key={option} className="flex items-center space-x-2 mb-1">
-                <RadioGroupItem value={option} id={option} />
-                <label
-                  htmlFor={option}
-                  className="text-sm cursor-pointer select-none"
-                >
-                  {option}
-                </label>
-              </div>
-            ))}
-          </RadioGroup>
+          <div className="max-h-32 overflow-y-auto">
+            <RadioGroup
+              value={optionValue}
+              onValueChange={setOptionValue}
+              className="mb-2"
+            >
+              {interviewSteps[step].options.map((option: string) => (
+                <div key={option} className="flex items-center space-x-2 mb-1">
+                  <RadioGroupItem value={option} id={option} />
+                  <label
+                    htmlFor={option}
+                    className="text-sm cursor-pointer select-none"
+                  >
+                    {option}
+                  </label>
+                </div>
+              ))}
+            </RadioGroup>
+          </div>
           <button
             className={`bg-blue-600 text-white px-5 py-2 rounded-xl hover:scale-105 shadow ${
               isLoading || !optionValue ? "opacity-60" : ""
