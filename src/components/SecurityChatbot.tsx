@@ -12,8 +12,18 @@ const providerNames = {
 const interviewSteps = [
   {
     key: "topic",
-    question: "Let's get started! What security issue or topic do you need help with (e.g., suspicious email, app permissions, unsafe website, etc.)?",
-    type: "input"
+    question: "What security issue or topic do you need help with?",
+    type: "options",
+    options: [
+      "Suspicious email",
+      "App permissions",
+      "Unsafe website",
+      "Virus/Malware",
+      "Phishing attempt",
+      "Lost/Stolen device",
+      "Data breach",
+      "Other"
+    ]
   },
   {
     key: "device",
@@ -30,8 +40,16 @@ const interviewSteps = [
   },
   {
     key: "details",
-    question: "Briefly describe what's happening or your concern in a few sentences.",
-    type: "input"
+    question: "Which best describes your concern?",
+    type: "options",
+    options: [
+      "I received a suspicious message or email",
+      "An app is acting strangely",
+      "A website gave me a warning",
+      "I think my device is infected",
+      "Account password may be stolen",
+      "Other/Not listed"
+    ]
   },
   {
     key: "urgency",
@@ -281,53 +299,29 @@ Provide a clear, helpful, step-by-step answer and next steps for this user.`;
       {/* Show input only if not finished submitting */}
       {(step < interviewSteps.length && !submitted) && (
         <div className="flex flex-col gap-2 mt-1 px-4 pb-3">
-          {interviewSteps[step].type === "options" ? (
-            <RadioGroup
-              value={optionValue}
-              onValueChange={setOptionValue}
-              className="mb-2"
-            >
-              {interviewSteps[step].options.map((option: string) => (
-                <div key={option} className="flex items-center space-x-2 mb-1">
-                  <RadioGroupItem value={option} id={option} />
-                  <label
-                    htmlFor={option}
-                    className="text-sm cursor-pointer select-none"
-                  >
-                    {option}
-                  </label>
-                </div>
-              ))}
-            </RadioGroup>
-          ) : (
-            <input
-              className="border px-3 py-2 rounded-xl flex-1"
-              placeholder="Type your answer"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && input.trim()) handleSend();
-              }}
-              disabled={isLoading}
-              autoFocus
-            />
-          )}
+          <RadioGroup
+            value={optionValue}
+            onValueChange={setOptionValue}
+            className="mb-2"
+          >
+            {interviewSteps[step].options.map((option: string) => (
+              <div key={option} className="flex items-center space-x-2 mb-1">
+                <RadioGroupItem value={option} id={option} />
+                <label
+                  htmlFor={option}
+                  className="text-sm cursor-pointer select-none"
+                >
+                  {option}
+                </label>
+              </div>
+            ))}
+          </RadioGroup>
           <button
             className={`bg-blue-600 text-white px-5 py-2 rounded-xl hover:scale-105 shadow ${
-              isLoading ||
-              !(interviewSteps[step].type === "options"
-                ? optionValue
-                : input.trim())
-                ? "opacity-60"
-                : ""
+              isLoading || !optionValue ? "opacity-60" : ""
             }`}
             onClick={handleSend}
-            disabled={
-              isLoading ||
-              !(interviewSteps[step].type === "options"
-                ? optionValue
-                : input.trim())
-            }
+            disabled={isLoading || !optionValue}
           >
             Next
           </button>
