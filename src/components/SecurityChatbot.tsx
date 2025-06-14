@@ -7,18 +7,40 @@ const providerNames = {
   perplexity: "Perplexity"
 };
 
+// Define step-by-step questions for the live answering flow
+const interviewSteps = [
+  {
+    key: "topic",
+    question: "Let's get started! What security issue or topic do you need help with (e.g., suspicious email, app permissions, unsafe website, etc.)?",
+  },
+  {
+    key: "device",
+    question: "What device are you using (phone, laptop, tablet) and its type (iPhone, Android, Windows PC, etc.)?",
+  },
+  {
+    key: "details",
+    question: "Briefly describe what's happening or your concern in a few sentences.",
+  },
+  {
+    key: "urgency",
+    question: "How urgent is this issue? (Not urgent, Somewhat urgent, Very urgent, Emergency)",
+  },
+];
+
 export default function SecurityChatbot() {
-  const [messages, setMessages] = useState<{ from: string; text: string }[]>([
-    {
-      from: "bot",
-      text: "Hi! I'm your AI security assistant. Ask me anything about device, app, or online safety.",
-    },
-  ]);
+  // Each message: { from: "bot" | "user", text: string }
+  const [messages, setMessages] = useState<{ from: string; text: string }[]>([]);
   const [input, setInput] = useState("");
   const [isKeyDialog, setIsKeyDialog] = useState(false);
   const [keyInput, setKeyInput] = useState("");
   const [localProvider, setLocalProvider] = useState<AIProvider>("openai");
   const [keyError, setKeyError] = useState<string | null>(null);
+
+  // Live Answering states
+  const [step, setStep] = useState(0); // which interview step we are on
+  const [answers, setAnswers] = useState<{ [key: string]: string }>({}); // collect step answers
+  const [submitted, setSubmitted] = useState(false);
+
   const {
     openaiApiKey,
     perplexityApiKey,
@@ -37,7 +59,26 @@ export default function SecurityChatbot() {
     setLocalProvider(provider);
   }, [provider]);
 
-  // Show the key dialog if the API key is missing or invalid
+  // Start the interview if it's the user's first visit
+  useEffect(() => {
+    if (messages.length === 0) {
+      setMessages([
+        {
+          from: "bot",
+          text: `👋 Welcome to LiveAnswering! I'll guide you step-by-step to resolve your security issue. Respond to my questions below.`,
+        },
+        {
+          from: "bot",
+          text: interviewSteps[0].question,
+        },
+      ]);
+      setStep(0);
+      setAnswers({});
+      setSubmitted(false);
+    }
+  }, [messages.length]);
+
+  // Open API key dialog if needed
   useEffect(() => {
     let missing =
       (provider === "openai" && !openaiApiKey) ||
@@ -49,36 +90,74 @@ export default function SecurityChatbot() {
           `Please enter a valid ${providerNames[provider]} API key.`
       );
     }
-    // Only clear error if not invalid
     if (!keyIsInvalid && isKeyDialog) setKeyError(null);
     // eslint-disable-next-line
   }, [keyIsInvalid, openaiApiKey, perplexityApiKey, error, provider]);
 
+  // Handle input submission in step-by-step mode
   async function handleSend() {
     if (!input.trim() || isLoading) return;
+
+    // Add user message
     setMessages((m) => [...m, { from: "user", text: input.trim() }]);
-    if (
-      (provider === "openai" && !openaiApiKey) ||
-      (provider === "perplexity" && !perplexityApiKey)
-    ) {
-      setIsKeyDialog(true);
-      setInput("");
-      return;
-    }
-    const question = input.trim();
+
+    // Collect answer
+    const currentStepKey = interviewSteps[step]?.key;
+    const nextStep = step + 1;
+    setAnswers((prev) => ({
+      ...prev,
+      [currentStepKey]: input.trim(),
+    }));
     setInput("");
-    setMessages((m) => [
-      ...m,
-      { from: "bot", text: "Thinking..." },
-    ]);
-    const answer = await sendQuestion(question);
-    setMessages((m) => [
-      ...m.slice(0, -1),
-      {
-        from: "bot",
-        text: answer || error || "Sorry, there was a problem. Try again.",
-      },
-    ]);
+
+    // If more steps, ask next question; else, process & summarize/ask AI
+    if (nextStep < interviewSteps.length) {
+      setStep(nextStep);
+      setTimeout(() => {
+        setMessages((m) => [
+          ...m,
+          { from: "bot", text: interviewSteps[nextStep].question },
+        ]);
+      }, 350);
+    } else {
+      // End of interview – process everything
+      setStep(nextStep);
+      setSubmitted(true);
+      setTimeout(async () => {
+        // Build a system + user prompt summarizing the answers
+        const summaryText = `Thank you! Here's what you've told me:
+        
+- Topic: ${answers["topic"] ?? input.trim()}
+- Device: ${answers["device"] ?? ""}
+- Details: ${answers["details"] ?? ""}
+- Urgency: ${answers["urgency"] ?? ""}
+
+Summarizing your responses. I will now analyze your situation and provide step-by-step advice.`;
+
+        setMessages((m) => [
+          ...m,
+          { from: "bot", text: summaryText },
+          { from: "bot", text: "Processing your information..." },
+        ]);
+        // Prepare a full context prompt for the AI
+        const fullPrompt = `You are a friendly security assistant. The user has answered these questions:
+- Topic: ${answers["topic"] ?? input.trim()}
+- Device: ${answers["device"] ?? ""}
+- Details: ${answers["details"] ?? ""}
+- Urgency: ${answers["urgency"] ?? ""}
+
+Provide a clear, helpful, step-by-step answer and next steps for this user.`;
+
+        const aiReply = await sendQuestion(fullPrompt);
+        setMessages((m) => [
+          ...m.slice(0, -1), // remove "Processing your information..."
+          {
+            from: "bot",
+            text: aiReply || error || "Sorry, there was a problem. Try again.",
+          },
+        ]);
+      }, 600);
+    }
   }
 
   function handleKeySave() {
@@ -110,7 +189,7 @@ export default function SecurityChatbot() {
     <div className="rounded-3xl shadow-lg border border-blue-100 overflow-hidden max-w-full">
       <div className="bg-gradient-to-tr from-blue-400 via-blue-100 to-white px-6 py-3 flex items-center gap-2">
         <Shield className="w-6 h-6 text-blue-600" />
-        <h3 className="font-semibold text-lg text-blue-900">Security Chatbot</h3>
+        <h3 className="font-semibold text-lg text-blue-900">LiveAnswering</h3>
         <button
           className="ml-auto text-xs px-3 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium"
           onClick={handleOpenKeyDialog}
@@ -119,7 +198,6 @@ export default function SecurityChatbot() {
         >
           API Key
         </button>
-        {/* Provider switch (toggle) */}
         <div className="ml-3 flex items-center gap-2">
           <button
             className={`text-xs px-2 rounded transition-all ${
@@ -169,27 +247,31 @@ export default function SecurityChatbot() {
           </div>
         ))}
       </div>
-      <div className="flex gap-2 mt-1 px-4 pb-3">
-        <input
-          className="border px-3 py-2 rounded-xl flex-1"
-          placeholder="Type your security question"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleSend();
-          }}
-          disabled={isLoading}
-        />
-        <button
-          className={`bg-blue-600 text-white px-5 py-2 rounded-xl hover:scale-105 shadow ${
-            isLoading || !input.trim() ? "opacity-60" : ""
-          }`}
-          onClick={handleSend}
-          disabled={isLoading || !input.trim()}
-        >
-          Send
-        </button>
-      </div>
+      {/* Show input only if not finished submitting */}
+      {(step < interviewSteps.length && !submitted) && (
+        <div className="flex gap-2 mt-1 px-4 pb-3">
+          <input
+            className="border px-3 py-2 rounded-xl flex-1"
+            placeholder="Type your answer"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSend();
+            }}
+            disabled={isLoading}
+            autoFocus
+          />
+          <button
+            className={`bg-blue-600 text-white px-5 py-2 rounded-xl hover:scale-105 shadow ${
+              isLoading || !input.trim() ? "opacity-60" : ""
+            }`}
+            onClick={handleSend}
+            disabled={isLoading || !input.trim()}
+          >
+            Next
+          </button>
+        </div>
+      )}
 
       {/* API Key Dialog */}
       {isKeyDialog && (
