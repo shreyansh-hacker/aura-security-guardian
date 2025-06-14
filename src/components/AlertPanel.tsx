@@ -1,16 +1,55 @@
-
 import { useEffect, useState } from "react";
 import { AlertTriangle, Bell, Shield, X, Wifi, Lock, Smartphone, Globe, Database, Clock, Eye, Activity } from "lucide-react";
 
-// Enhanced real-time threat detection
+// Accurate browser and platform detection
+const getBrowserInfo = () => {
+  const userAgent = navigator.userAgent;
+  let browserName = 'Unknown';
+  
+  if (userAgent.includes('Firefox')) {
+    browserName = 'Firefox';
+  } else if (userAgent.includes('Edg')) {
+    browserName = 'Edge';
+  } else if (userAgent.includes('Chrome')) {
+    browserName = 'Chrome';
+  } else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) {
+    browserName = 'Safari';
+  }
+  
+  return browserName;
+};
+
+const getPlatformInfo = () => {
+  const userAgent = navigator.userAgent;
+  
+  if (userAgent.includes('Windows NT 10.0')) {
+    return 'Windows 10/11';
+  } else if (userAgent.includes('Mac OS X')) {
+    return 'macOS';
+  } else if (userAgent.includes('Linux')) {
+    return 'Linux';
+  } else if (userAgent.includes('iPhone')) {
+    return 'iOS';
+  } else if (userAgent.includes('Android')) {
+    return 'Android';
+  }
+  
+  return navigator.platform;
+};
+
+// Enhanced real-time threat detection with accurate system info
 const generateRealTimeThreat = () => {
+  const browserName = getBrowserInfo();
+  const platformName = getPlatformInfo();
+  
   const systemInfo = {
     userAgent: navigator.userAgent,
-    platform: navigator.platform,
+    platform: platformName,
     onLine: navigator.onLine,
     cookieEnabled: navigator.cookieEnabled,
     language: navigator.language,
-    hardwareConcurrency: navigator.hardwareConcurrency
+    hardwareConcurrency: navigator.hardwareConcurrency,
+    browserName
   };
 
   const threatTypes = [
@@ -29,7 +68,7 @@ const generateRealTimeThreat = () => {
       type: "Browser Security", 
       icon: <Globe className="w-5 h-5 text-red-500" />,
       messages: [
-        `${systemInfo.userAgent.includes('Chrome') ? 'Chrome' : 'Browser'} extension requesting excessive permissions`,
+        `${systemInfo.browserName} extension requesting excessive permissions`,
         "Suspicious script execution blocked",
         `Cookie policy violation detected - ${systemInfo.cookieEnabled ? 'Enabled' : 'Disabled'} cookies`,
         "Cross-site scripting attempt prevented"
@@ -345,10 +384,10 @@ export default function AlertPanel() {
         )}
       </div>
 
-      {/* Footer */}
+      {/* Footer with accurate system info */}
       <div className="mt-3 pt-3 border-t text-center">
         <div className="text-xs text-gray-400">
-          🛡️ Real-time threat detection • Live system monitoring • Auto-refresh every 8s
+          🛡️ Real-time threat detection • {getBrowserInfo()} on {getPlatformInfo()} • Auto-refresh every 8s
         </div>
       </div>
     </div>

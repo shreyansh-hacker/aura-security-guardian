@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { Battery, Zap, Cpu, TrendingUp, TrendingDown, Wifi, Globe } from "lucide-react";
 
-// Real system data collection
+// Real system data collection with accurate browser detection
 const getSystemPerformance = () => {
   const performance = window.performance;
   const memory = (performance as any).memory;
@@ -27,6 +26,71 @@ const getNetworkInfo = () => {
     rtt: connection.rtt,
     saveData: connection.saveData
   } : null;
+};
+
+// Accurate browser and platform detection
+const getBrowserInfo = () => {
+  const userAgent = navigator.userAgent;
+  let browserName = 'Unknown';
+  let browserVersion = 'Unknown';
+  
+  // Detect browser
+  if (userAgent.includes('Firefox')) {
+    browserName = 'Firefox';
+    const match = userAgent.match(/Firefox\/(\d+)/);
+    browserVersion = match ? match[1] : 'Unknown';
+  } else if (userAgent.includes('Edg')) {
+    browserName = 'Edge';
+    const match = userAgent.match(/Edg\/(\d+)/);
+    browserVersion = match ? match[1] : 'Unknown';
+  } else if (userAgent.includes('Chrome')) {
+    browserName = 'Chrome';
+    const match = userAgent.match(/Chrome\/(\d+)/);
+    browserVersion = match ? match[1] : 'Unknown';
+  } else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) {
+    browserName = 'Safari';
+    const match = userAgent.match(/Safari\/(\d+)/);
+    browserVersion = match ? match[1] : 'Unknown';
+  }
+  
+  return { browserName, browserVersion };
+};
+
+const getPlatformInfo = () => {
+  const userAgent = navigator.userAgent;
+  const platform = navigator.platform;
+  
+  let osName = 'Unknown';
+  let osVersion = 'Unknown';
+  
+  // Detect OS
+  if (userAgent.includes('Windows NT 10.0')) {
+    osName = 'Windows';
+    osVersion = '10/11';
+  } else if (userAgent.includes('Windows NT 6.3')) {
+    osName = 'Windows';
+    osVersion = '8.1';
+  } else if (userAgent.includes('Windows NT 6.1')) {
+    osName = 'Windows';
+    osVersion = '7';
+  } else if (userAgent.includes('Mac OS X')) {
+    osName = 'macOS';
+    const match = userAgent.match(/Mac OS X (\d+[._]\d+[._]?\d*)/);
+    osVersion = match ? match[1].replace(/_/g, '.') : 'Unknown';
+  } else if (userAgent.includes('Linux')) {
+    osName = 'Linux';
+    if (userAgent.includes('Ubuntu')) osVersion = 'Ubuntu';
+  } else if (userAgent.includes('iPhone')) {
+    osName = 'iOS';
+    const match = userAgent.match(/OS (\d+[._]\d+[._]?\d*)/);
+    osVersion = match ? match[1].replace(/_/g, '.') : 'Unknown';
+  } else if (userAgent.includes('Android')) {
+    osName = 'Android';
+    const match = userAgent.match(/Android (\d+[._]\d+[._]?\d*)/);
+    osVersion = match ? match[1] : 'Unknown';
+  }
+  
+  return { osName, osVersion, platform };
 };
 
 // Enhanced realistic app data generation
@@ -103,6 +167,8 @@ export default function BatteryMonitor() {
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [systemInfo, setSystemInfo] = useState<any>({});
   const [batteryInfo, setBatteryInfo] = useState<any>(null);
+  const [browserInfo, setBrowserInfo] = useState<any>({});
+  const [platformInfo, setPlatformInfo] = useState<any>({});
 
   // Get real battery information if available
   useEffect(() => {
@@ -124,10 +190,15 @@ export default function BatteryMonitor() {
 
     getBatteryInfo();
     
-    // Update system info
+    // Update system info with accurate data
     const sysInfo = getSystemPerformance();
     const networkInfo = getNetworkInfo();
+    const browserData = getBrowserInfo();
+    const platformData = getPlatformInfo();
+    
     setSystemInfo({ ...sysInfo, network: networkInfo });
+    setBrowserInfo(browserData);
+    setPlatformInfo(platformData);
   }, []);
 
   // Load initial data
@@ -217,19 +288,23 @@ export default function BatteryMonitor() {
         </div>
       </div>
 
-      {/* Real System Info */}
-      {systemInfo.memory && (
-        <div className="bg-gray-50 p-3 rounded-lg mb-4 text-xs">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <span className="font-medium">Memory Usage:</span> {Math.floor((systemInfo.memory.usedJSHeapSize / 1024 / 1024))}MB / {Math.floor((systemInfo.memory.jsHeapSizeLimit / 1024 / 1024))}MB
-            </div>
-            <div>
-              <span className="font-medium">Connection:</span> {systemInfo.network?.downlink ? `${systemInfo.network.downlink} Mbps` : 'Unknown'}
-            </div>
+      {/* Accurate System Info */}
+      <div className="bg-gray-50 p-3 rounded-lg mb-4 text-xs">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <span className="font-medium">Browser:</span> {browserInfo.browserName} {browserInfo.browserVersion}
+          </div>
+          <div>
+            <span className="font-medium">Platform:</span> {platformInfo.osName} {platformInfo.osVersion}
+          </div>
+          <div>
+            <span className="font-medium">Memory Usage:</span> {systemInfo.memory ? Math.floor((systemInfo.memory.usedJSHeapSize / 1024 / 1024)) : 'Unknown'}MB / {systemInfo.memory ? Math.floor((systemInfo.memory.jsHeapSizeLimit / 1024 / 1024)) : 'Unknown'}MB
+          </div>
+          <div>
+            <span className="font-medium">Connection:</span> {systemInfo.network?.downlink ? `${systemInfo.network.downlink} Mbps` : 'Unknown'}
           </div>
         </div>
-      )}
+      </div>
 
       <div className="border rounded-lg shadow-inner bg-gray-50 p-4">
         {stats.length === 0 ? (

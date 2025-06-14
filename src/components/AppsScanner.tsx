@@ -1,8 +1,74 @@
 import { useState, useEffect } from "react";
 import { ShieldAlert, Shield, AlertTriangle, Clock, Zap, Database, Eye, Lock, Wifi, Globe } from "lucide-react";
 
+// Accurate browser and platform detection
+const getBrowserInfo = () => {
+  const userAgent = navigator.userAgent;
+  let browserName = 'Unknown';
+  let browserVersion = 'Unknown';
+  
+  if (userAgent.includes('Firefox')) {
+    browserName = 'Firefox';
+    const match = userAgent.match(/Firefox\/(\d+)/);
+    browserVersion = match ? match[1] : 'Unknown';
+  } else if (userAgent.includes('Edg')) {
+    browserName = 'Edge';
+    const match = userAgent.match(/Edg\/(\d+)/);
+    browserVersion = match ? match[1] : 'Unknown';
+  } else if (userAgent.includes('Chrome')) {
+    browserName = 'Chrome';
+    const match = userAgent.match(/Chrome\/(\d+)/);
+    browserVersion = match ? match[1] : 'Unknown';
+  } else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) {
+    browserName = 'Safari';
+    const match = userAgent.match(/Safari\/(\d+)/);
+    browserVersion = match ? match[1] : 'Unknown';
+  }
+  
+  return { browserName, browserVersion };
+};
+
+const getPlatformInfo = () => {
+  const userAgent = navigator.userAgent;
+  
+  let osName = 'Unknown';
+  let osVersion = 'Unknown';
+  let architecture = navigator.platform;
+  
+  if (userAgent.includes('Windows NT 10.0')) {
+    osName = 'Windows';
+    osVersion = '10/11';
+  } else if (userAgent.includes('Windows NT 6.3')) {
+    osName = 'Windows';
+    osVersion = '8.1';
+  } else if (userAgent.includes('Windows NT 6.1')) {
+    osName = 'Windows';
+    osVersion = '7';
+  } else if (userAgent.includes('Mac OS X')) {
+    osName = 'macOS';
+    const match = userAgent.match(/Mac OS X (\d+[._]\d+[._]?\d*)/);
+    osVersion = match ? match[1].replace(/_/g, '.') : 'Unknown';
+  } else if (userAgent.includes('Linux')) {
+    osName = 'Linux';
+    if (userAgent.includes('Ubuntu')) osVersion = 'Ubuntu';
+  } else if (userAgent.includes('iPhone')) {
+    osName = 'iOS';
+    const match = userAgent.match(/OS (\d+[._]\d+[._]?\d*)/);
+    osVersion = match ? match[1].replace(/_/g, '.') : 'Unknown';
+  } else if (userAgent.includes('Android')) {
+    osName = 'Android';
+    const match = userAgent.match(/Android (\d+[._]\d+[._]?\d*)/);
+    osVersion = match ? match[1] : 'Unknown';
+  }
+  
+  return { osName, osVersion, architecture };
+};
+
 // Enhanced real system data collection
 const getSystemCapabilities = () => {
+  const browserInfo = getBrowserInfo();
+  const platformInfo = getPlatformInfo();
+  
   return {
     userAgent: navigator.userAgent,
     platform: navigator.platform,
@@ -13,6 +79,8 @@ const getSystemCapabilities = () => {
     maxTouchPoints: navigator.maxTouchPoints,
     webdriver: (navigator as any).webdriver,
     plugins: Array.from(navigator.plugins).map(plugin => plugin.name),
+    browserInfo,
+    platformInfo
   };
 };
 
@@ -166,7 +234,7 @@ export default function AppsScanner() {
             Real-time Web App Security Scanner
           </h3>
           <p className="text-sm text-gray-500">
-            Monitoring {results.length} active web applications • {systemInfo.platform} • {systemInfo.onLine ? 'Online' : 'Offline'}
+            Monitoring {results.length} active web applications • {systemInfo.platformInfo?.osName} {systemInfo.platformInfo?.osVersion} • {systemInfo.onLine ? 'Online' : 'Offline'}
           </p>
         </div>
         <div className="flex gap-2">
@@ -186,14 +254,14 @@ export default function AppsScanner() {
         </div>
       </div>
 
-      {/* System Info Panel */}
+      {/* Accurate System Info Panel */}
       <div className="bg-blue-50 p-3 rounded-lg mb-4 text-sm">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
-            <span className="font-medium">Browser:</span> {systemInfo.userAgent?.split(' ').pop()?.split('/')[0] || 'Unknown'}
+            <span className="font-medium">Browser:</span> {systemInfo.browserInfo?.browserName} {systemInfo.browserInfo?.browserVersion}
           </div>
           <div>
-            <span className="font-medium">Platform:</span> {systemInfo.platform}
+            <span className="font-medium">Platform:</span> {systemInfo.platformInfo?.osName} {systemInfo.platformInfo?.osVersion}
           </div>
           <div>
             <span className="font-medium">CPU Cores:</span> {systemInfo.hardwareConcurrency || 'Unknown'}
