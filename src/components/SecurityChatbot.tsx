@@ -1,12 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { Shield } from "lucide-react";
-import { useAIAssistant, AIProvider } from "../hooks/useAIAssistant";
+import { useAIAssistant } from "../hooks/useAIAssistant";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
-
-const providerNames = {
-  openai: "OpenAI",
-  perplexity: "Perplexity"
-};
 
 // Improved interview steps: "type" = "options"
 const interviewSteps = [
@@ -56,10 +52,8 @@ const interviewSteps = [
 export default function SecurityChatbot() {
   // Each message: { from: "bot" | "user", text: string }
   const [messages, setMessages] = useState<{ from: string; text: string }[]>([]);
-  const [input, setInput] = useState("");
   const [isKeyDialog, setIsKeyDialog] = useState(false);
   const [keyInput, setKeyInput] = useState("");
-  const [localProvider, setLocalProvider] = useState<AIProvider>("openai");
   const [keyError, setKeyError] = useState<string | null>(null);
 
   // Live Answering states
@@ -71,21 +65,12 @@ export default function SecurityChatbot() {
 
   const {
     openaiApiKey,
-    perplexityApiKey,
-    provider,
     setOpenaiApiKey,
-    setPerplexityApiKey,
-    setProvider,
     isLoading,
     error,
     keyIsInvalid,
     sendQuestion,
   } = useAIAssistant();
-
-  // Keep local selection in sync with provider (for the dialog radio buttons)
-  useEffect(() => {
-    setLocalProvider(provider);
-  }, [provider]);
 
   // Start the interview if it's the user's first visit
   useEffect(() => {
@@ -108,19 +93,14 @@ export default function SecurityChatbot() {
 
   // Open API key dialog if needed
   useEffect(() => {
-    let missing =
-      (provider === "openai" && !openaiApiKey) ||
-      (provider === "perplexity" && !perplexityApiKey);
-    if (keyIsInvalid || (missing && !isKeyDialog)) {
+    if (keyIsInvalid || (!openaiApiKey && !isKeyDialog)) {
       setIsKeyDialog(true);
       setKeyError(
-        error ||
-          `Please enter a valid ${providerNames[provider]} API key.`
+        error || "Please enter a valid OpenAI API key to continue."
       );
     }
     if (!keyIsInvalid && isKeyDialog) setKeyError(null);
-    // eslint-disable-next-line
-  }, [keyIsInvalid, openaiApiKey, perplexityApiKey, error, provider]);
+  }, [keyIsInvalid, openaiApiKey, error]);
 
   // Updated useEffect to reset optionValue on step change
   useEffect(() => {
@@ -144,7 +124,6 @@ export default function SecurityChatbot() {
       ...prev,
       [currentStepKey]: valueToUse,
     }));
-    setInput("");
     setOptionValue("");
 
     // If more steps, ask next question; else, process & summarize/ask AI
@@ -197,11 +176,7 @@ Provide a clear, helpful, step-by-step answer and next steps for this user's sec
 
   function handleKeySave() {
     if (!keyInput.trim()) return;
-    if (localProvider === "openai") {
-      setOpenaiApiKey(keyInput.trim());
-    } else {
-      setPerplexityApiKey(keyInput.trim());
-    }
+    setOpenaiApiKey(keyInput.trim());
     setIsKeyDialog(false);
     setKeyInput("");
     setKeyError(null);
@@ -211,13 +186,6 @@ Provide a clear, helpful, step-by-step answer and next steps for this user's sec
     setIsKeyDialog(true);
     setKeyInput("");
     setKeyError(null);
-  }
-
-  // Switch provider from input radio
-  function handleSwitchProvider(newProvider: AIProvider) {
-    setLocalProvider(newProvider);
-    setProvider(newProvider);
-    setKeyInput(""); // clear any existing input
   }
 
   return (
@@ -233,32 +201,6 @@ Provide a clear, helpful, step-by-step answer and next steps for this user's sec
         >
           API Key
         </button>
-        <div className="ml-3 flex items-center gap-2">
-          <button
-            className={`text-xs px-2 rounded transition-all ${
-              provider === "openai"
-                ? "bg-blue-600 text-white"
-                : "bg-blue-100 text-blue-700"
-            }`}
-            onClick={() => handleSwitchProvider("openai")}
-            disabled={provider === "openai" || isLoading}
-            aria-label="Use OpenAI"
-          >
-            OpenAI
-          </button>
-          <button
-            className={`text-xs px-2 rounded transition-all ${
-              provider === "perplexity"
-                ? "bg-blue-600 text-white"
-                : "bg-blue-100 text-blue-700"
-            }`}
-            onClick={() => handleSwitchProvider("perplexity")}
-            disabled={provider === "perplexity" || isLoading}
-            aria-label="Use Perplexity"
-          >
-            Perplexity
-          </button>
-        </div>
       </div>
       <div className="bg-gray-50 px-4 py-3 h-64 overflow-y-auto mb-2 space-y-1 scrollbar-thin scrollbar-thumb-blue-100">
         {messages.map((msg, i) => (
@@ -318,34 +260,10 @@ Provide a clear, helpful, step-by-step answer and next steps for this user's sec
       {isKeyDialog && (
         <div className="fixed inset-0 z-30 bg-black bg-opacity-40 flex items-center justify-center">
           <div className="bg-white rounded-2xl p-8 shadow-lg max-w-sm w-full">
-            <div className="mb-3 font-bold text-lg">Enter your API Key</div>
-            <div className="mb-2 flex gap-3">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="provider"
-                  checked={localProvider === "openai"}
-                  onChange={() => handleSwitchProvider("openai")}
-                />
-                <span className="ml-1">OpenAI</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="provider"
-                  checked={localProvider === "perplexity"}
-                  onChange={() => handleSwitchProvider("perplexity")}
-                />
-                <span className="ml-1">Perplexity</span>
-              </label>
-            </div>
+            <div className="mb-3 font-bold text-lg">Enter your OpenAI API Key</div>
             <input
               className="border px-2 py-2 rounded w-full mb-3"
-              placeholder={
-                localProvider === "openai"
-                  ? "sk-..." // OpenAI example
-                  : "pk-..." // Perplexity example
-              }
+              placeholder="sk-..."
               type="password"
               value={keyInput}
               onChange={(e) => setKeyInput(e.target.value)}
@@ -373,31 +291,15 @@ Provide a clear, helpful, step-by-step answer and next steps for this user's sec
               )}
             </div>
             <div className="mt-2 text-xs text-gray-600">
-              {localProvider === "openai" ? (
-                <>
-                  Your key will be stored safely in your browser.&nbsp;
-                  <a
-                    href="https://platform.openai.com/account/api-keys"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-700 underline"
-                  >
-                    Get OpenAI Key
-                  </a>
-                </>
-              ) : (
-                <>
-                  Your key will be stored safely in your browser.&nbsp;
-                  <a
-                    href="https://platform.perplexity.ai/settings/api"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-700 underline"
-                  >
-                    Get Perplexity Key
-                  </a>
-                </>
-              )}
+              Your key will be stored safely in your browser.&nbsp;
+              <a
+                href="https://platform.openai.com/account/api-keys"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-700 underline"
+              >
+                Get OpenAI Key
+              </a>
             </div>
             {keyError && (
               <div className="mt-3 text-red-600 text-xs">{keyError}</div>
@@ -411,7 +313,7 @@ Provide a clear, helpful, step-by-step answer and next steps for this user's sec
         <div className="text-red-600 mt-3 text-sm px-4">{error}</div>
       )}
       <div className="text-xs px-4 pb-2 text-gray-400">
-        Powered by {providerNames[provider]}.<br />
+        Powered by OpenAI.<br />
         Use your own API key (see settings).
       </div>
     </div>
