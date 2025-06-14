@@ -48,9 +48,12 @@ export default function SecurityChatbot() {
   }
 
   return (
-    <div>
-      <h3 className="font-semibold text-lg mb-2">Security Chatbot</h3>
-      <div className="border rounded-lg shadow-inner bg-gray-50 p-3 h-64 overflow-y-auto mb-2 space-y-1">
+    <div className="rounded-3xl shadow-lg border border-blue-100 overflow-hidden max-w-full">
+      <div className="bg-gradient-to-tr from-blue-400 via-blue-100 to-white px-6 py-3 flex items-center gap-2">
+        <Shield className="w-6 h-6 text-blue-600" />
+        <h3 className="font-semibold text-lg text-blue-900">Security Chatbot</h3>
+      </div>
+      <div className="bg-gray-50 px-4 py-3 h-64 overflow-y-auto mb-2 space-y-1 scrollbar-thin scrollbar-thumb-blue-100">
         {messages.map((msg, i) => (
           <div
             key={i}
@@ -61,8 +64,8 @@ export default function SecurityChatbot() {
           >
             {msg.from === "bot" ? (
               <span className="flex items-center">
-                <Shield className="w-4 h-4 mr-1" />
-                <span className={`text-sm ${msg.text === "Thinking..." ? "italic opacity-60" : ""}`}>
+                <Shield className="w-4 h-4 mr-1 drop-shadow" />
+                <span className={`text-sm rounded-xl px-2 py-1 ${msg.text === "Thinking..." ? "italic opacity-60" : ""}`}>
                   {msg.text}
                 </span>
               </span>
@@ -72,9 +75,9 @@ export default function SecurityChatbot() {
           </div>
         ))}
       </div>
-      <div className="flex gap-2 mt-1">
+      <div className="flex gap-2 mt-1 px-4 pb-3">
         <input
-          className="border px-3 py-2 rounded flex-1"
+          className="border px-3 py-2 rounded-xl flex-1"
           placeholder="Type your security question"
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -82,7 +85,7 @@ export default function SecurityChatbot() {
           disabled={isLoading}
         />
         <button
-          className={`bg-blue-600 text-white px-4 py-2 rounded hover:scale-105 shadow ${isLoading || !input.trim() ? "opacity-60" : ""}`}
+          className={`bg-blue-600 text-white px-5 py-2 rounded-xl hover:scale-105 shadow ${isLoading || !input.trim() ? "opacity-60" : ""}`}
           onClick={handleSend}
           disabled={isLoading || !input.trim()}
         >
@@ -93,7 +96,7 @@ export default function SecurityChatbot() {
       {/* API Key Dialog */}
       {isKeyDialog && (
         <div className="fixed inset-0 z-30 bg-black bg-opacity-40 flex items-center justify-center">
-          <div className="bg-white rounded p-6 shadow-lg max-w-sm w-full">
+          <div className="bg-white rounded-2xl p-6 shadow-lg max-w-sm w-full">
             <div className="mb-2 font-bold text-lg">Enter your OpenAI API Key</div>
             <input
               className="border px-2 py-2 rounded w-full mb-3"
@@ -129,7 +132,7 @@ export default function SecurityChatbot() {
 
       {/* Error message */}
       {error && !isKeyDialog && (
-        <div className="text-red-600 mt-3 text-sm">{error}</div>
+        <div className="text-red-600 mt-3 text-sm px-4">{error}</div>
       )}
     </div>
   );
