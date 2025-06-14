@@ -1,29 +1,48 @@
 import { useState, useEffect } from "react";
 import { Shield } from "lucide-react";
 import { useAIAssistant, AIProvider } from "../hooks/useAIAssistant";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 const providerNames = {
   openai: "OpenAI",
   perplexity: "Perplexity"
 };
 
-// Define step-by-step questions for the live answering flow
+// Improved interview steps: "type" = "input" or "options"
 const interviewSteps = [
   {
     key: "topic",
     question: "Let's get started! What security issue or topic do you need help with (e.g., suspicious email, app permissions, unsafe website, etc.)?",
+    type: "input"
   },
   {
     key: "device",
-    question: "What device are you using (phone, laptop, tablet) and its type (iPhone, Android, Windows PC, etc.)?",
+    question: "What device are you using?",
+    type: "options",
+    options: [
+      "iPhone",
+      "Android Phone",
+      "Windows PC",
+      "Mac",
+      "Tablet",
+      "Other"
+    ]
   },
   {
     key: "details",
     question: "Briefly describe what's happening or your concern in a few sentences.",
+    type: "input"
   },
   {
     key: "urgency",
-    question: "How urgent is this issue? (Not urgent, Somewhat urgent, Very urgent, Emergency)",
+    question: "How urgent is this issue?",
+    type: "options",
+    options: [
+      "Not urgent",
+      "Somewhat urgent",
+      "Very urgent",
+      "Emergency"
+    ]
   },
 ];
 
@@ -40,6 +59,8 @@ export default function SecurityChatbot() {
   const [step, setStep] = useState(0); // which interview step we are on
   const [answers, setAnswers] = useState<{ [key: string]: string }>({}); // collect step answers
   const [submitted, setSubmitted] = useState(false);
+
+  const [optionValue, setOptionValue] = useState(""); // for radio/select
 
   const {
     openaiApiKey,
@@ -94,21 +115,31 @@ export default function SecurityChatbot() {
     // eslint-disable-next-line
   }, [keyIsInvalid, openaiApiKey, perplexityApiKey, error, provider]);
 
+  // Updated useEffect to reset optionValue on step change
+  useEffect(() => {
+    setOptionValue("");
+  }, [step]);
+
   // Handle input submission in step-by-step mode
   async function handleSend() {
-    if (!input.trim() || isLoading) return;
+    const currentStep = interviewSteps[step];
+    const valueToUse =
+      currentStep.type === "options" ? optionValue : input.trim();
+
+    if (!valueToUse || isLoading) return;
 
     // Add user message
-    setMessages((m) => [...m, { from: "user", text: input.trim() }]);
+    setMessages((m) => [...m, { from: "user", text: valueToUse }]);
 
     // Collect answer
-    const currentStepKey = interviewSteps[step]?.key;
+    const currentStepKey = currentStep.key;
     const nextStep = step + 1;
     setAnswers((prev) => ({
       ...prev,
-      [currentStepKey]: input.trim(),
+      [currentStepKey]: valueToUse,
     }));
     setInput("");
+    setOptionValue("");
 
     // If more steps, ask next question; else, process & summarize/ask AI
     if (nextStep < interviewSteps.length) {
@@ -249,24 +280,54 @@ Provide a clear, helpful, step-by-step answer and next steps for this user.`;
       </div>
       {/* Show input only if not finished submitting */}
       {(step < interviewSteps.length && !submitted) && (
-        <div className="flex gap-2 mt-1 px-4 pb-3">
-          <input
-            className="border px-3 py-2 rounded-xl flex-1"
-            placeholder="Type your answer"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSend();
-            }}
-            disabled={isLoading}
-            autoFocus
-          />
+        <div className="flex flex-col gap-2 mt-1 px-4 pb-3">
+          {interviewSteps[step].type === "options" ? (
+            <RadioGroup
+              value={optionValue}
+              onValueChange={setOptionValue}
+              className="mb-2"
+            >
+              {interviewSteps[step].options.map((option: string) => (
+                <div key={option} className="flex items-center space-x-2 mb-1">
+                  <RadioGroupItem value={option} id={option} />
+                  <label
+                    htmlFor={option}
+                    className="text-sm cursor-pointer select-none"
+                  >
+                    {option}
+                  </label>
+                </div>
+              ))}
+            </RadioGroup>
+          ) : (
+            <input
+              className="border px-3 py-2 rounded-xl flex-1"
+              placeholder="Type your answer"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && input.trim()) handleSend();
+              }}
+              disabled={isLoading}
+              autoFocus
+            />
+          )}
           <button
             className={`bg-blue-600 text-white px-5 py-2 rounded-xl hover:scale-105 shadow ${
-              isLoading || !input.trim() ? "opacity-60" : ""
+              isLoading ||
+              !(interviewSteps[step].type === "options"
+                ? optionValue
+                : input.trim())
+                ? "opacity-60"
+                : ""
             }`}
             onClick={handleSend}
-            disabled={isLoading || !input.trim()}
+            disabled={
+              isLoading ||
+              !(interviewSteps[step].type === "options"
+                ? optionValue
+                : input.trim())
+            }
           >
             Next
           </button>
