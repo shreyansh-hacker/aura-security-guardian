@@ -8,7 +8,7 @@ const providerNames = {
   perplexity: "Perplexity"
 };
 
-// Improved interview steps: "type" = "input" or "options"
+// Improved interview steps: "type" = "options"
 const interviewSteps = [
   {
     key: "topic",
@@ -50,18 +50,7 @@ const interviewSteps = [
       "Account password may be stolen",
       "Other/Not listed"
     ]
-  },
-  {
-    key: "urgency",
-    question: "How urgent is this issue?",
-    type: "options",
-    options: [
-      "Not urgent",
-      "Somewhat urgent",
-      "Very urgent",
-      "Emergency"
-    ]
-  },
+  }
 ];
 
 export default function SecurityChatbot() {
@@ -141,8 +130,7 @@ export default function SecurityChatbot() {
   // Handle input submission in step-by-step mode
   async function handleSend() {
     const currentStep = interviewSteps[step];
-    const valueToUse =
-      currentStep.type === "options" ? optionValue : input.trim();
+    const valueToUse = optionValue;
 
     if (!valueToUse || isLoading) return;
 
@@ -176,12 +164,11 @@ export default function SecurityChatbot() {
         // Build a system + user prompt summarizing the answers
         const summaryText = `Thank you! Here's what you've told me:
         
-- Topic: ${answers["topic"] ?? input.trim()}
+- Topic: ${answers["topic"] ?? valueToUse}
 - Device: ${answers["device"] ?? ""}
 - Details: ${answers["details"] ?? ""}
-- Urgency: ${answers["urgency"] ?? ""}
 
-Summarizing your responses. I will now analyze your situation and provide step-by-step advice.`;
+I will now analyze your situation and provide step-by-step advice.`;
 
         setMessages((m) => [
           ...m,
@@ -190,12 +177,11 @@ Summarizing your responses. I will now analyze your situation and provide step-b
         ]);
         // Prepare a full context prompt for the AI
         const fullPrompt = `You are a friendly security assistant. The user has answered these questions:
-- Topic: ${answers["topic"] ?? input.trim()}
+- Topic: ${answers["topic"] ?? valueToUse}
 - Device: ${answers["device"] ?? ""}
 - Details: ${answers["details"] ?? ""}
-- Urgency: ${answers["urgency"] ?? ""}
 
-Provide a clear, helpful, step-by-step answer and next steps for this user.`;
+Provide a clear, helpful, step-by-step answer and next steps for this user's security concern.`;
 
         const aiReply = await sendQuestion(fullPrompt);
         setMessages((m) => [
