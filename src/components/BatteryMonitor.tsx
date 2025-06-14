@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from "react";
-import { Battery, Zap, Cpu, TrendingUp, TrendingDown, Wifi, Globe, Activity, RefreshCw } from "lucide-react";
+import { Battery, Zap, Cpu, TrendingUp, TrendingDown, Wifi, Globe, Activity, RefreshCw, Clock, HardDrive, Monitor, Thermometer } from "lucide-react";
 
-// Enhanced system data collection
+// Enhanced system data collection with more metrics
 const getSystemPerformance = () => {
   const performance = window.performance;
   const memory = (performance as any).memory;
@@ -13,8 +13,11 @@ const getSystemPerformance = () => {
     memory: memory ? {
       usedJSHeapSize: memory.usedJSHeapSize,
       totalJSHeapSize: memory.totalJSHeapSize,
-      jsHeapSizeLimit: memory.jsHeapSizeLimit
-    } : null
+      jsHeapSizeLimit: memory.jsHeapSizeLimit,
+      memoryUsagePercent: Math.floor((memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100)
+    } : null,
+    loadTime: performance.timing.loadEventEnd - performance.timing.navigationStart,
+    domContentLoaded: performance.timing.domContentLoadedEventEnd - performance.timing.navigationStart
   };
 };
 
@@ -25,39 +28,51 @@ const getNetworkInfo = () => {
     effectiveType: connection.effectiveType,
     downlink: connection.downlink,
     rtt: connection.rtt,
-    saveData: connection.saveData
+    saveData: connection.saveData,
+    networkType: connection.type || 'unknown'
   } : null;
 };
 
-// Improved browser detection
+// More comprehensive browser detection
 const getBrowserInfo = () => {
   const userAgent = navigator.userAgent;
   let browserName = 'Unknown';
   let browserVersion = 'Unknown';
+  let engineName = 'Unknown';
   
-  // More accurate browser detection
   if (userAgent.includes('Edg/')) {
     browserName = 'Microsoft Edge';
+    engineName = 'Chromium';
     const match = userAgent.match(/Edg\/([0-9.]+)/);
     browserVersion = match ? match[1] : 'Unknown';
   } else if (userAgent.includes('Chrome/') && !userAgent.includes('Edg/')) {
     browserName = 'Google Chrome';
+    engineName = 'Chromium';
     const match = userAgent.match(/Chrome\/([0-9.]+)/);
     browserVersion = match ? match[1] : 'Unknown';
   } else if (userAgent.includes('Firefox/')) {
     browserName = 'Mozilla Firefox';
+    engineName = 'Gecko';
     const match = userAgent.match(/Firefox\/([0-9.]+)/);
     browserVersion = match ? match[1] : 'Unknown';
   } else if (userAgent.includes('Safari/') && !userAgent.includes('Chrome') && !userAgent.includes('Edg')) {
     browserName = 'Safari';
+    engineName = 'WebKit';
     const match = userAgent.match(/Version\/([0-9.]+)/);
     browserVersion = match ? match[1] : 'Unknown';
   }
   
-  return { browserName, browserVersion };
+  return { 
+    browserName, 
+    browserVersion, 
+    engineName,
+    userAgent: userAgent.substring(0, 50) + '...',
+    cookieEnabled: navigator.cookieEnabled,
+    javaEnabled: (navigator as any).javaEnabled ? (navigator as any).javaEnabled() : false
+  };
 };
 
-// Improved platform detection
+// Enhanced platform detection with more details
 const getPlatformInfo = () => {
   const userAgent = navigator.userAgent;
   const platform = navigator.platform;
@@ -65,16 +80,24 @@ const getPlatformInfo = () => {
   let osName = 'Unknown';
   let osVersion = 'Unknown';
   let architecture = 'Unknown';
+  let deviceType = 'Desktop';
   
-  // Better OS detection
+  // Mobile detection
+  if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)) {
+    deviceType = 'Mobile';
+  } else if (/iPad/i.test(userAgent)) {
+    deviceType = 'Tablet';
+  }
+  
+  // Enhanced OS detection
   if (platform.includes('Win') || userAgent.includes('Windows')) {
     osName = 'Windows';
     if (userAgent.includes('Windows NT 10.0')) {
-      osVersion = '10/11';
+      osVersion = userAgent.includes('Windows NT 10.0; Win64') ? 'Windows 11' : 'Windows 10';
     } else if (userAgent.includes('Windows NT 6.3')) {
-      osVersion = '8.1';
+      osVersion = 'Windows 8.1';
     } else if (userAgent.includes('Windows NT 6.1')) {
-      osVersion = '7';
+      osVersion = 'Windows 7';
     }
     architecture = userAgent.includes('WOW64') || userAgent.includes('Win64') ? 'x64' : 'x86';
   } else if (platform.includes('Mac') || userAgent.includes('Mac OS')) {
@@ -92,64 +115,103 @@ const getPlatformInfo = () => {
     const match = userAgent.match(/Android ([0-9.]+)/);
     osVersion = match ? match[1] : 'Unknown';
     architecture = 'ARM';
+    deviceType = 'Mobile';
   }
   
-  return { osName, osVersion, platform, architecture };
+  return { 
+    osName, 
+    osVersion, 
+    platform, 
+    architecture, 
+    deviceType,
+    language: navigator.language,
+    languages: navigator.languages,
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+  };
 };
 
-// More realistic app data generation
+// More comprehensive app data generation with categories
 const generateAppStats = () => {
   const systemPerf = getSystemPerformance();
   const networkInfo = getNetworkInfo();
   
   const webApps = [
-    { name: "Chrome Main", baseUsage: { cpu: 12, battery: 10, memory: 180 } },
-    { name: "YouTube", baseUsage: { cpu: 25, battery: 22, memory: 280 } },
-    { name: "WhatsApp Web", baseUsage: { cpu: 4, battery: 3, memory: 65 } },
-    { name: "Gmail", baseUsage: { cpu: 3, battery: 2, memory: 45 } },
-    { name: "Discord", baseUsage: { cpu: 8, battery: 7, memory: 120 } },
-    { name: "Spotify Web", baseUsage: { cpu: 6, battery: 5, memory: 95 } },
-    { name: "Google Maps", baseUsage: { cpu: 18, battery: 20, memory: 220 } },
-    { name: "Netflix", baseUsage: { cpu: 30, battery: 35, memory: 350 } },
-    { name: "Teams", baseUsage: { cpu: 15, battery: 12, memory: 200 } },
-    { name: "Slack", baseUsage: { cpu: 7, battery: 6, memory: 85 } }
+    { name: "Chrome Main Process", category: "Browser", baseUsage: { cpu: 15, battery: 12, memory: 220, disk: 150 } },
+    { name: "YouTube Premium", category: "Media", baseUsage: { cpu: 28, battery: 25, memory: 320, disk: 80 } },
+    { name: "WhatsApp Web", category: "Communication", baseUsage: { cpu: 6, battery: 4, memory: 85, disk: 45 } },
+    { name: "Gmail Workspace", category: "Productivity", baseUsage: { cpu: 4, battery: 3, memory: 65, disk: 30 } },
+    { name: "Discord Desktop", category: "Communication", baseUsage: { cpu: 10, battery: 8, memory: 140, disk: 90 } },
+    { name: "Spotify Web Player", category: "Media", baseUsage: { cpu: 8, battery: 6, memory: 110, disk: 60 } },
+    { name: "Google Maps", category: "Navigation", baseUsage: { cpu: 20, battery: 22, memory: 280, disk: 120 } },
+    { name: "Netflix 4K", category: "Media", baseUsage: { cpu: 35, battery: 40, memory: 450, disk: 200 } },
+    { name: "Microsoft Teams", category: "Productivity", baseUsage: { cpu: 18, battery: 15, memory: 250, disk: 110 } },
+    { name: "Slack Workspace", category: "Communication", baseUsage: { cpu: 9, battery: 7, memory: 120, disk: 70 } },
+    { name: "Adobe Photoshop Web", category: "Creative", baseUsage: { cpu: 45, battery: 50, memory: 600, disk: 300 } },
+    { name: "Figma Design", category: "Creative", baseUsage: { cpu: 25, battery: 20, memory: 350, disk: 180 } },
+    { name: "GitHub Codespaces", category: "Development", baseUsage: { cpu: 30, battery: 25, memory: 400, disk: 250 } }
   ];
 
-  const numApps = Math.floor(Math.random() * 3) + 5;
+  const numApps = Math.floor(Math.random() * 4) + 7;
   const selectedApps = webApps.sort(() => 0.5 - Math.random()).slice(0, numApps);
 
-  return selectedApps.map(app => {
-    const variation = 0.7 + Math.random() * 0.6; // 0.7 to 1.3 multiplier
+  return selectedApps.map((app, index) => {
+    const variation = 0.6 + Math.random() * 0.8; // 0.6 to 1.4 multiplier
     const networkFactor = networkInfo?.downlink ? 
-      Math.min(1.2, Math.max(0.8, 1 + (10 - networkInfo.downlink) * 0.05)) : 1;
+      Math.min(1.3, Math.max(0.7, 1 + (10 - networkInfo.downlink) * 0.06)) : 1;
     
     const cpu = Math.max(1, Math.floor(app.baseUsage.cpu * variation));
     const battery = Math.max(1, Math.floor(app.baseUsage.battery * variation * networkFactor));
-    const memory = Math.max(20, Math.floor(app.baseUsage.memory * variation));
+    const memory = Math.max(25, Math.floor(app.baseUsage.memory * variation));
+    const disk = Math.max(10, Math.floor(app.baseUsage.disk * variation));
     
     return {
+      id: index,
       app: app.name,
+      category: app.category,
       cpu,
       battery,
       memory,
-      network: `${(Math.random() * 3 + 0.5).toFixed(1)} MB/s`,
-      trend: Math.random() > 0.7 ? (Math.random() > 0.5 ? 'up' : 'down') : 'stable',
-      status: battery > 20 ? 'High' : battery > 10 ? 'Medium' : 'Low'
+      disk,
+      network: `${(Math.random() * 5 + 0.8).toFixed(1)} MB/s`,
+      uptime: `${Math.floor(Math.random() * 180 + 10)}m`,
+      trend: Math.random() > 0.65 ? (Math.random() > 0.5 ? 'up' : 'down') : 'stable',
+      status: battery > 25 ? 'High' : battery > 12 ? 'Medium' : 'Low',
+      priority: Math.random() > 0.7 ? 'High' : Math.random() > 0.4 ? 'Normal' : 'Low'
     };
   });
 };
 
-function getUsageColor(val: number) {
-  if (val > 25) return "text-red-600 font-bold";
-  if (val > 15) return "text-orange-500 font-semibold";
-  if (val > 8) return "text-yellow-500 font-medium";
+function getUsageColor(val: number, type: string = 'battery') {
+  const thresholds = {
+    battery: { high: 25, medium: 15, low: 8 },
+    cpu: { high: 30, medium: 20, low: 10 },
+    memory: { high: 400, medium: 200, low: 100 }
+  };
+  
+  const threshold = thresholds[type as keyof typeof thresholds] || thresholds.battery;
+  
+  if (val > threshold.high) return "text-red-600 font-bold";
+  if (val > threshold.medium) return "text-orange-500 font-semibold";
+  if (val > threshold.low) return "text-yellow-500 font-medium";
   return "text-green-600 font-normal";
 }
 
 function getTrendIcon(trend: string) {
   if (trend === 'up') return <TrendingUp className="w-3 h-3 text-red-500" />;
   if (trend === 'down') return <TrendingDown className="w-3 h-3 text-green-500" />;
-  return <div className="w-3 h-3" />;
+  return <div className="w-3 h-3 bg-gray-300 rounded-full" />;
+}
+
+function getCategoryIcon(category: string) {
+  switch (category) {
+    case 'Browser': return <Globe className="w-4 h-4 text-blue-500" />;
+    case 'Media': return <Monitor className="w-4 h-4 text-purple-500" />;
+    case 'Communication': return <Wifi className="w-4 h-4 text-green-500" />;
+    case 'Productivity': return <Activity className="w-4 h-4 text-orange-500" />;
+    case 'Creative': return <Zap className="w-4 h-4 text-pink-500" />;
+    case 'Development': return <Cpu className="w-4 h-4 text-indigo-500" />;
+    default: return <Activity className="w-4 h-4 text-gray-500" />;
+  }
 }
 
 export default function BatteryMonitor() {
@@ -160,6 +222,8 @@ export default function BatteryMonitor() {
   const [batteryInfo, setBatteryInfo] = useState<any>(null);
   const [browserInfo, setBrowserInfo] = useState<any>({});
   const [platformInfo, setPlatformInfo] = useState<any>({});
+  const [sortBy, setSortBy] = useState('battery');
+  const [filterBy, setFilterBy] = useState('all');
 
   // Initialize system information
   useEffect(() => {
@@ -202,7 +266,7 @@ export default function BatteryMonitor() {
     };
 
     updateAppStats();
-    const interval = setInterval(updateAppStats, 8000);
+    const interval = setInterval(updateAppStats, 6000);
     return () => clearInterval(interval);
   }, []);
 
@@ -213,161 +277,325 @@ export default function BatteryMonitor() {
       setAppStats(newStats);
       setLastUpdate(new Date());
       setIsRefreshing(false);
-    }, 1000);
+    }, 1200);
   };
 
+  // Enhanced statistics
   const totalBatteryUsage = appStats.reduce((sum, item) => sum + item.battery, 0);
-  const highUsageApps = appStats.filter(item => item.battery > 15).length;
+  const totalMemoryUsage = appStats.reduce((sum, item) => sum + item.memory, 0);
+  const highUsageApps = appStats.filter(item => item.battery > 20).length;
   const avgCpuUsage = appStats.length > 0 ? Math.floor(appStats.reduce((sum, item) => sum + item.cpu, 0) / appStats.length) : 0;
+
+  // Filter and sort apps
+  const filteredApps = appStats
+    .filter(app => filterBy === 'all' || app.category.toLowerCase() === filterBy)
+    .sort((a, b) => {
+      if (sortBy === 'name') return a.app.localeCompare(b.app);
+      return b[sortBy] - a[sortBy];
+    });
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Enhanced Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-bold text-xl mb-1 flex items-center gap-2">
-            <Activity className="w-6 h-6 text-blue-600" />
-            Battery & Performance Monitor
+          <h3 className="font-bold text-2xl mb-2 flex items-center gap-3">
+            <Activity className="w-7 h-7 text-blue-600" />
+            Advanced System Monitor
           </h3>
-          <p className="text-sm text-gray-600">
-            Live system monitoring • {appStats.length} processes
-            {batteryInfo && ` • Battery: ${batteryInfo.level}%`}
-          </p>
+          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+            <span className="flex items-center gap-1">
+              <Cpu className="w-4 h-4" />
+              {appStats.length} processes
+            </span>
+            {batteryInfo && (
+              <span className="flex items-center gap-1">
+                <Battery className="w-4 h-4" />
+                {batteryInfo.level}% {batteryInfo.charging ? '⚡ Charging' : '🔋 On Battery'}
+              </span>
+            )}
+            <span className="flex items-center gap-1">
+              <Clock className="w-4 h-4" />
+              {platformInfo.timeZone}
+            </span>
+          </div>
         </div>
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+          className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 py-3 rounded-xl text-sm hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 flex items-center gap-2 shadow-lg"
         >
           <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          {isRefreshing ? "Updating..." : "Refresh"}
+          {isRefreshing ? "Updating..." : "Refresh Data"}
         </button>
       </div>
 
-      {/* System Overview Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
+      {/* Enhanced System Overview Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <Battery className="w-5 h-5 text-blue-600" />
-            <span className="text-sm font-semibold text-blue-800">Total Usage</span>
+            <span className="text-sm font-semibold text-blue-800">Battery Usage</span>
           </div>
           <div className="text-2xl font-bold text-blue-600">{totalBatteryUsage}%</div>
+          <div className="text-xs text-blue-500 mt-1">Total consumption</div>
         </div>
         
-        <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-xl border border-orange-200">
+        <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-xl border border-orange-200 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <Zap className="w-5 h-5 text-orange-600" />
-            <span className="text-sm font-semibold text-orange-800">High Usage</span>
+            <span className="text-sm font-semibold text-orange-800">High Impact</span>
           </div>
           <div className="text-2xl font-bold text-orange-600">{highUsageApps}</div>
+          <div className="text-xs text-orange-500 mt-1">Resource intensive</div>
         </div>
         
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200">
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <Cpu className="w-5 h-5 text-purple-600" />
-            <span className="text-sm font-semibold text-purple-800">Avg CPU</span>
+            <span className="text-sm font-semibold text-purple-800">CPU Average</span>
           </div>
           <div className="text-2xl font-bold text-purple-600">{avgCpuUsage}%</div>
+          <div className="text-xs text-purple-500 mt-1">Processing power</div>
         </div>
         
-        <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
+        <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
-            <Wifi className="w-5 h-5 text-green-600" />
-            <span className="text-sm font-semibold text-green-800">Network</span>
+            <HardDrive className="w-5 h-5 text-green-600" />
+            <span className="text-sm font-semibold text-green-800">Memory</span>
           </div>
-          <div className="text-sm font-bold text-green-600">
+          <div className="text-xl font-bold text-green-600">{Math.floor(totalMemoryUsage / 1024)}GB</div>
+          <div className="text-xs text-green-500 mt-1">RAM usage</div>
+        </div>
+        
+        <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 p-4 rounded-xl border border-cyan-200 shadow-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <Wifi className="w-5 h-5 text-cyan-600" />
+            <span className="text-sm font-semibold text-cyan-800">Network</span>
+          </div>
+          <div className="text-sm font-bold text-cyan-600">
             {systemInfo.network?.effectiveType?.toUpperCase() || 'WiFi'}
           </div>
+          <div className="text-xs text-cyan-500 mt-1">
+            {systemInfo.network?.downlink ? `${systemInfo.network.downlink} Mbps` : 'Connected'}
+          </div>
         </div>
       </div>
 
-      {/* System Information */}
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-        <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-          <Globe className="w-4 h-4" />
-          System Information
+      {/* Enhanced System Information Panel */}
+      <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl p-5 shadow-sm">
+        <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <Globe className="w-5 h-5" />
+          Detailed System Information
         </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Browser:</span>
-            <span className="font-medium">{browserInfo.browserName} {browserInfo.browserVersion}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+          <div className="space-y-2">
+            <h5 className="font-semibold text-gray-700 flex items-center gap-1">
+              <Monitor className="w-4 h-4" />
+              Browser & Engine
+            </h5>
+            <div className="space-y-1 pl-5">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Browser:</span>
+                <span className="font-medium">{browserInfo.browserName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Version:</span>
+                <span className="font-medium">{browserInfo.browserVersion}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Engine:</span>
+                <span className="font-medium">{browserInfo.engineName}</span>
+              </div>
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">OS:</span>
-            <span className="font-medium">{platformInfo.osName} {platformInfo.osVersion}</span>
+          
+          <div className="space-y-2">
+            <h5 className="font-semibold text-gray-700 flex items-center gap-1">
+              <Cpu className="w-4 h-4" />
+              System & Hardware
+            </h5>
+            <div className="space-y-1 pl-5">
+              <div className="flex justify-between">
+                <span className="text-gray-600">OS:</span>
+                <span className="font-medium">{platformInfo.osName} {platformInfo.osVersion}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Architecture:</span>
+                <span className="font-medium">{platformInfo.architecture}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Device:</span>
+                <span className="font-medium">{platformInfo.deviceType}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">CPU Cores:</span>
+                <span className="font-medium">{navigator.hardwareConcurrency || 'Unknown'}</span>
+              </div>
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Architecture:</span>
-            <span className="font-medium">{platformInfo.architecture}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Memory:</span>
-            <span className="font-medium">
-              {systemInfo.memory ? `${Math.floor(systemInfo.memory.usedJSHeapSize / 1024 / 1024)}MB` : 'N/A'}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">CPU Cores:</span>
-            <span className="font-medium">{navigator.hardwareConcurrency || 'Unknown'}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Connection:</span>
-            <span className="font-medium">
-              {systemInfo.network?.downlink ? `${systemInfo.network.downlink} Mbps` : 'Unknown'}
-            </span>
+          
+          <div className="space-y-2">
+            <h5 className="font-semibold text-gray-700 flex items-center gap-1">
+              <HardDrive className="w-4 h-4" />
+              Performance & Network
+            </h5>
+            <div className="space-y-1 pl-5">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Memory:</span>
+                <span className="font-medium">
+                  {systemInfo.memory ? `${Math.floor(systemInfo.memory.usedJSHeapSize / 1024 / 1024)}MB (${systemInfo.memory.memoryUsagePercent}%)` : 'N/A'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Load Time:</span>
+                <span className="font-medium">{systemInfo.loadTime ? `${systemInfo.loadTime}ms` : 'N/A'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Connection:</span>
+                <span className="font-medium">
+                  {systemInfo.network?.downlink ? `${systemInfo.network.downlink} Mbps` : 'Unknown'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Language:</span>
+                <span className="font-medium">{platformInfo.language}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Process Table */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-gray-200 bg-gray-50">
-          <h4 className="font-semibold text-gray-800">Active Processes</h4>
+      {/* Filter and Sort Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">Sort by:</span>
+            <select 
+              value={sortBy} 
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="battery">Battery Usage</option>
+              <option value="cpu">CPU Usage</option>
+              <option value="memory">Memory Usage</option>
+              <option value="name">Name</option>
+            </select>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">Filter:</span>
+            <select 
+              value={filterBy} 
+              onChange={(e) => setFilterBy(e.target.value)}
+              className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Categories</option>
+              <option value="browser">Browser</option>
+              <option value="media">Media</option>
+              <option value="communication">Communication</option>
+              <option value="productivity">Productivity</option>
+              <option value="creative">Creative</option>
+              <option value="development">Development</option>
+            </select>
+          </div>
         </div>
         
-        {appStats.length === 0 ? (
-          <div className="text-center py-12">
-            <Activity className="w-16 h-16 text-gray-300 mx-auto mb-3" />
-            <div className="text-gray-500">Loading system processes...</div>
+        <div className="text-sm text-gray-600">
+          Showing {filteredApps.length} of {appStats.length} processes
+        </div>
+      </div>
+
+      {/* Enhanced Process Table */}
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-lg">
+        <div className="p-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+          <h4 className="font-bold text-gray-800 flex items-center gap-2">
+            <Activity className="w-5 h-5" />
+            Active Processes & Resource Monitoring
+          </h4>
+        </div>
+        
+        {filteredApps.length === 0 ? (
+          <div className="text-center py-16">
+            <Activity className="w-20 h-20 text-gray-300 mx-auto mb-4" />
+            <div className="text-gray-500 text-lg">Loading system processes...</div>
+            <div className="text-gray-400 text-sm mt-2">Analyzing resource usage patterns</div>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                 <tr>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Process Name</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">CPU %</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Battery %</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Memory MB</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Network</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Trend</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
+                  <th className="text-left py-4 px-5 font-bold text-gray-700">Process Information</th>
+                  <th className="text-left py-4 px-5 font-bold text-gray-700">CPU %</th>
+                  <th className="text-left py-4 px-5 font-bold text-gray-700">Battery %</th>
+                  <th className="text-left py-4 px-5 font-bold text-gray-700">Memory MB</th>
+                  <th className="text-left py-4 px-5 font-bold text-gray-700">Disk MB</th>
+                  <th className="text-left py-4 px-5 font-bold text-gray-700">Network</th>
+                  <th className="text-left py-4 px-5 font-bold text-gray-700">Uptime</th>
+                  <th className="text-left py-4 px-5 font-bold text-gray-700">Trend</th>
+                  <th className="text-left py-4 px-5 font-bold text-gray-700">Priority</th>
                 </tr>
               </thead>
               <tbody>
-                {appStats.map((item, index) => (
-                  <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="py-4 px-4">
-                      <div className="font-medium text-gray-800">{item.app}</div>
-                      <div className="text-xs text-gray-500">Web Process</div>
-                    </td>
-                    <td className={`py-4 px-4 ${getUsageColor(item.cpu)}`}>{item.cpu}%</td>
-                    <td className={`py-4 px-4 ${getUsageColor(item.battery)}`}>{item.battery}%</td>
-                    <td className="py-4 px-4 text-gray-700">{item.memory} MB</td>
-                    <td className="py-4 px-4 text-gray-600 text-sm">{item.network}</td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-1">
-                        {getTrendIcon(item.trend)}
-                        <span className="text-xs text-gray-600 capitalize">{item.trend}</span>
+                {filteredApps.map((item, index) => (
+                  <tr key={item.id} className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-blue-50 hover:to-transparent transition-all duration-200">
+                    <td className="py-5 px-5">
+                      <div className="flex items-center gap-3">
+                        {getCategoryIcon(item.category)}
+                        <div>
+                          <div className="font-semibold text-gray-800">{item.app}</div>
+                          <div className="text-xs text-gray-500 flex items-center gap-1">
+                            <span className="px-2 py-1 bg-gray-100 rounded-full text-xs font-medium">
+                              {item.category}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </td>
-                    <td className="py-4 px-4">
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                        item.status === 'High' ? 'bg-red-100 text-red-700' :
-                        item.status === 'Medium' ? 'bg-orange-100 text-orange-700' :
-                        'bg-green-100 text-green-700'
+                    <td className={`py-5 px-5 ${getUsageColor(item.cpu, 'cpu')}`}>
+                      <div className="flex items-center gap-2">
+                        <span>{item.cpu}%</span>
+                        <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              item.cpu > 30 ? 'bg-red-500' : item.cpu > 20 ? 'bg-orange-500' : 'bg-green-500'
+                            }`}
+                            style={{ width: `${Math.min(item.cpu * 2, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </td>
+                    <td className={`py-5 px-5 ${getUsageColor(item.battery)}`}>
+                      <div className="flex items-center gap-2">
+                        <span>{item.battery}%</span>
+                        <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              item.battery > 25 ? 'bg-red-500' : item.battery > 15 ? 'bg-orange-500' : 'bg-green-500'
+                            }`}
+                            style={{ width: `${Math.min(item.battery * 2, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </td>
+                    <td className={`py-5 px-5 ${getUsageColor(item.memory, 'memory')}`}>{item.memory} MB</td>
+                    <td className="py-5 px-5 text-gray-700">{item.disk} MB</td>
+                    <td className="py-5 px-5 text-gray-600 text-sm font-mono">{item.network}</td>
+                    <td className="py-5 px-5 text-gray-600 text-sm">{item.uptime}</td>
+                    <td className="py-5 px-5">
+                      <div className="flex items-center gap-2">
+                        {getTrendIcon(item.trend)}
+                        <span className="text-xs text-gray-600 capitalize font-medium">{item.trend}</span>
+                      </div>
+                    </td>
+                    <td className="py-5 px-5">
+                      <span className={`text-xs px-3 py-1 rounded-full font-semibold ${
+                        item.priority === 'High' ? 'bg-red-100 text-red-700' :
+                        item.priority === 'Normal' ? 'bg-blue-100 text-blue-700' :
+                        'bg-gray-100 text-gray-700'
                       }`}>
-                        {item.status} Impact
+                        {item.priority}
                       </span>
                     </td>
                   </tr>
@@ -378,10 +606,27 @@ export default function BatteryMonitor() {
         )}
       </div>
 
-      {/* Footer */}
-      <div className="text-center text-xs text-gray-500">
-        🔋 Real-time monitoring • Last updated: {lastUpdate.toLocaleTimeString()} • 
-        {navigator.onLine ? ' 🟢 Online' : ' 🔴 Offline'}
+      {/* Enhanced Footer with More Stats */}
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
+          <div className="flex items-center gap-6">
+            <span className="flex items-center gap-2">
+              <Thermometer className="w-4 h-4 text-blue-500" />
+              System Status: {navigator.onLine ? '🟢 Online & Optimal' : '🔴 Offline'}
+            </span>
+            <span className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-purple-500" />
+              Last Update: {lastUpdate.toLocaleTimeString()}
+            </span>
+          </div>
+          <div className="flex items-center gap-4 text-xs text-gray-600">
+            <span>Real-time monitoring active</span>
+            <span>•</span>
+            <span>Auto-refresh every 6s</span>
+            <span>•</span>
+            <span>{appStats.length} processes tracked</span>
+          </div>
+        </div>
       </div>
     </div>
   );
