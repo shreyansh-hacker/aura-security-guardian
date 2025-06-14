@@ -3,11 +3,40 @@ import { useState } from "react";
 import { Shield } from "lucide-react";
 
 const FAQS = [
-  { question: "How do I avoid phishing sites?", answer: "Never click on unknown or suspicious URLs, especially in messages or emails. Check the sender address and look for typos." },
-  { question: "How can I check if an app is safe?", answer: "Scan apps regularly and avoid installing APK files from untrusted sources." },
-  { question: "What is real-time protection?", answer: "It means threats are detected and blocked as soon as they appear, not just during scans." },
-  { question: "Why is my battery draining fast?", answer: "Battery may drain faster if apps run in background, send push notifications, or perform heavy tasks." },
+  {
+    keywords: ["phishing", "avoid phishing", "fake sites", "phishing sites"],
+    question: "How do I avoid phishing sites?",
+    answer: "Never click on unknown or suspicious URLs, especially in messages or emails. Check the sender address and look for typos."
+  },
+  {
+    keywords: ["app safe", "app is safe", "scan app", "apk", "untrusted"],
+    question: "How can I check if an app is safe?",
+    answer: "Scan apps regularly and avoid installing APK files from untrusted sources."
+  },
+  {
+    keywords: ["real-time protection", "real time protection", "what is real-time", "threats detected"],
+    question: "What is real-time protection?",
+    answer: "It means threats are detected and blocked as soon as they appear, not just during scans."
+  },
+  {
+    keywords: ["battery draining", "battery drain", "why battery", "background", "push notification"],
+    question: "Why is my battery draining fast?",
+    answer: "Battery may drain faster if apps run in background, send push notifications, or perform heavy tasks."
+  },
 ];
+
+function findFAQMatch(userInput: string) {
+  const input = userInput.toLowerCase();
+  for (const faq of FAQS) {
+    if (
+      faq.keywords.some(kw => input.includes(kw))
+      || input === faq.question.toLowerCase()
+    ) {
+      return faq;
+    }
+  }
+  return null;
+}
 
 export default function SecurityChatbot() {
   const [messages, setMessages] = useState<{ from: string, text: string }[]>([
@@ -17,16 +46,16 @@ export default function SecurityChatbot() {
 
   const handleSend = () => {
     if (!input.trim()) return;
-    setMessages(m => [...m, { from: "user", text: input }]);
-    // basic keyword match for demo
-    const key = input.toLowerCase();
-    const hit = FAQS.find(f => key.includes(f.question.toLowerCase().slice(0, 7)));
+    const question = input.trim();
+    setMessages(m => [...m, { from: "user", text: question }]);
+    const hit = findFAQMatch(question);
+
     const answer =
       hit?.answer ||
-      "Sorry, I don't know about that yet. Try asking another security-related question!";
+      "Sorry, I don't know about that yet. Try asking me about phishing, app safety, or battery issues!";
     setTimeout(() => {
       setMessages(m => [...m, { from: "bot", text: answer }]);
-    }, 700);
+    }, 600);
     setInput("");
   };
 
@@ -38,9 +67,17 @@ export default function SecurityChatbot() {
           <div
             key={i}
             className={`flex items-center gap-2
-              ${msg.from === "bot" ? "text-blue-700" : "justify-end text-gray-800"}`}
+              ${msg.from === "bot"
+                ? "justify-start text-blue-700"
+                : "justify-end text-gray-800"}`}
           >
-            {msg.from === "bot" && <Shield className="w-4 h-4" />} <span className="text-sm">{msg.text}</span>
+            {msg.from === "bot" &&
+              <span className="flex items-center">
+                <Shield className="w-4 h-4 mr-1" />
+                <span className="text-sm">{msg.text}</span>
+              </span>}
+            {msg.from === "user" &&
+              <span className="text-sm bg-blue-100 px-3 py-1 rounded-xl">{msg.text}</span>}
           </div>
         ))}
       </div>
@@ -53,9 +90,9 @@ export default function SecurityChatbot() {
           onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
         />
         <button
-          className="bg-blue-600 text-white px-4 py-2 rounded hover-scale shadow"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:scale-105 shadow"
           onClick={handleSend}
-          disabled={!input}
+          disabled={!input.trim()}
         >
           Send
         </button>
@@ -63,3 +100,4 @@ export default function SecurityChatbot() {
     </div>
   );
 }
+
