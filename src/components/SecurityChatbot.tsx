@@ -1,42 +1,66 @@
-
 import { useState, useEffect } from "react";
 import { Shield } from "lucide-react";
-import { useOpenAIChat } from "../hooks/useOpenAI";
+import { useAIAssistant, AIProvider } from "../hooks/useAIAssistant";
+
+const providerNames = {
+  openai: "OpenAI",
+  perplexity: "Perplexity"
+};
 
 export default function SecurityChatbot() {
   const [messages, setMessages] = useState<{ from: string; text: string }[]>([
-    { from: "bot", text: "Hi! I'm your AI security assistant. Ask me anything about device, app, or online safety." },
+    {
+      from: "bot",
+      text: "Hi! I'm your AI security assistant. Ask me anything about device, app, or online safety.",
+    },
   ]);
   const [input, setInput] = useState("");
+  const [isKeyDialog, setIsKeyDialog] = useState(false);
   const [keyInput, setKeyInput] = useState("");
+  const [localProvider, setLocalProvider] = useState<AIProvider>("openai");
+  const [keyError, setKeyError] = useState<string | null>(null);
   const {
-    apiKey,
-    setApiKey,
+    openaiApiKey,
+    perplexityApiKey,
+    provider,
+    setOpenaiApiKey,
+    setPerplexityApiKey,
+    setProvider,
     isLoading,
     error,
     keyIsInvalid,
     sendQuestion,
-  } = useOpenAIChat();
-  const [isKeyDialog, setIsKeyDialog] = useState(false);
-  const [keyError, setKeyError] = useState<string | null>(null);
+  } = useAIAssistant();
+
+  // Keep local selection in sync with provider (for the dialog radio buttons)
+  useEffect(() => {
+    setLocalProvider(provider);
+  }, [provider]);
 
   // Show the key dialog if the API key is missing or invalid
   useEffect(() => {
-    if (keyIsInvalid || (!apiKey && !isKeyDialog)) {
+    let missing =
+      (provider === "openai" && !openaiApiKey) ||
+      (provider === "perplexity" && !perplexityApiKey);
+    if (keyIsInvalid || (missing && !isKeyDialog)) {
       setIsKeyDialog(true);
-      setKeyError(error || "Please enter a valid OpenAI API key.");
+      setKeyError(
+        error ||
+          `Please enter a valid ${providerNames[provider]} API key.`
+      );
     }
-    // Only set error in key dialog if API key is invalid
-    if (!keyIsInvalid && isKeyDialog) {
-      setKeyError(null);
-    }
+    // Only clear error if not invalid
+    if (!keyIsInvalid && isKeyDialog) setKeyError(null);
     // eslint-disable-next-line
-  }, [keyIsInvalid, apiKey, error]);
+  }, [keyIsInvalid, openaiApiKey, perplexityApiKey, error, provider]);
 
   async function handleSend() {
     if (!input.trim() || isLoading) return;
     setMessages((m) => [...m, { from: "user", text: input.trim() }]);
-    if (!apiKey) {
+    if (
+      (provider === "openai" && !openaiApiKey) ||
+      (provider === "perplexity" && !perplexityApiKey)
+    ) {
       setIsKeyDialog(true);
       setInput("");
       return;
@@ -49,24 +73,37 @@ export default function SecurityChatbot() {
     ]);
     const answer = await sendQuestion(question);
     setMessages((m) => [
-      ...m.slice(0, -1), // Remove 'Thinking...'
-      { from: "bot", text: answer || (error || "Sorry, there was a problem. Try again.") },
+      ...m.slice(0, -1),
+      {
+        from: "bot",
+        text: answer || error || "Sorry, there was a problem. Try again.",
+      },
     ]);
   }
 
   function handleKeySave() {
-    if (keyInput.trim()) {
-      setApiKey(keyInput.trim());
-      setKeyInput("");
-      setIsKeyDialog(false);
-      setKeyError(null);
+    if (!keyInput.trim()) return;
+    if (localProvider === "openai") {
+      setOpenaiApiKey(keyInput.trim());
+    } else {
+      setPerplexityApiKey(keyInput.trim());
     }
+    setIsKeyDialog(false);
+    setKeyInput("");
+    setKeyError(null);
   }
 
   function handleOpenKeyDialog() {
     setIsKeyDialog(true);
     setKeyInput("");
     setKeyError(null);
+  }
+
+  // Switch provider from input radio
+  function handleSwitchProvider(newProvider: AIProvider) {
+    setLocalProvider(newProvider);
+    setProvider(newProvider);
+    setKeyInput(""); // clear any existing input
   }
 
   return (
@@ -82,6 +119,33 @@ export default function SecurityChatbot() {
         >
           API Key
         </button>
+        {/* Provider switch (toggle) */}
+        <div className="ml-3 flex items-center gap-2">
+          <button
+            className={`text-xs px-2 rounded transition-all ${
+              provider === "openai"
+                ? "bg-blue-600 text-white"
+                : "bg-blue-100 text-blue-700"
+            }`}
+            onClick={() => handleSwitchProvider("openai")}
+            disabled={provider === "openai" || isLoading}
+            aria-label="Use OpenAI"
+          >
+            OpenAI
+          </button>
+          <button
+            className={`text-xs px-2 rounded transition-all ${
+              provider === "perplexity"
+                ? "bg-blue-600 text-white"
+                : "bg-blue-100 text-blue-700"
+            }`}
+            onClick={() => handleSwitchProvider("perplexity")}
+            disabled={provider === "perplexity" || isLoading}
+            aria-label="Use Perplexity"
+          >
+            Perplexity
+          </button>
+        </div>
       </div>
       <div className="bg-gray-50 px-4 py-3 h-64 overflow-y-auto mb-2 space-y-1 scrollbar-thin scrollbar-thumb-blue-100">
         {messages.map((msg, i) => (
@@ -111,11 +175,15 @@ export default function SecurityChatbot() {
           placeholder="Type your security question"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") handleSend(); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSend();
+          }}
           disabled={isLoading}
         />
         <button
-          className={`bg-blue-600 text-white px-5 py-2 rounded-xl hover:scale-105 shadow ${isLoading || !input.trim() ? "opacity-60" : ""}`}
+          className={`bg-blue-600 text-white px-5 py-2 rounded-xl hover:scale-105 shadow ${
+            isLoading || !input.trim() ? "opacity-60" : ""
+          }`}
           onClick={handleSend}
           disabled={isLoading || !input.trim()}
         >
@@ -126,14 +194,38 @@ export default function SecurityChatbot() {
       {/* API Key Dialog */}
       {isKeyDialog && (
         <div className="fixed inset-0 z-30 bg-black bg-opacity-40 flex items-center justify-center">
-          <div className="bg-white rounded-2xl p-6 shadow-lg max-w-sm w-full">
-            <div className="mb-2 font-bold text-lg">Enter your OpenAI API Key</div>
+          <div className="bg-white rounded-2xl p-8 shadow-lg max-w-sm w-full">
+            <div className="mb-3 font-bold text-lg">Enter your API Key</div>
+            <div className="mb-2 flex gap-3">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="provider"
+                  checked={localProvider === "openai"}
+                  onChange={() => handleSwitchProvider("openai")}
+                />
+                <span className="ml-1">OpenAI</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="provider"
+                  checked={localProvider === "perplexity"}
+                  onChange={() => handleSwitchProvider("perplexity")}
+                />
+                <span className="ml-1">Perplexity</span>
+              </label>
+            </div>
             <input
               className="border px-2 py-2 rounded w-full mb-3"
-              placeholder="sk-..."
-              value={keyInput}
+              placeholder={
+                localProvider === "openai"
+                  ? "sk-..." // OpenAI example
+                  : "pk-..." // Perplexity example
+              }
               type="password"
-              onChange={e => setKeyInput(e.target.value)}
+              value={keyInput}
+              onChange={(e) => setKeyInput(e.target.value)}
               autoFocus
             />
             <div className="flex gap-2">
@@ -144,21 +236,45 @@ export default function SecurityChatbot() {
               >
                 Save
               </button>
-              {/* If key is invalid, don't allow canceling dialog */}
               {!keyIsInvalid && (
                 <button
                   className="bg-gray-200 px-3 py-1 rounded"
-                  onClick={() => { setIsKeyDialog(false); setKeyInput(""); setKeyError(null); }}
+                  onClick={() => {
+                    setIsKeyDialog(false);
+                    setKeyInput("");
+                    setKeyError(null);
+                  }}
                 >
                   Cancel
                 </button>
               )}
             </div>
             <div className="mt-2 text-xs text-gray-600">
-              Your key will be stored safely in your browser.{" "}
-              <a href="https://platform.openai.com/account/api-keys" target="_blank" rel="noopener noreferrer" className="text-blue-700 underline">
-                Get API Key
-              </a>
+              {localProvider === "openai" ? (
+                <>
+                  Your key will be stored safely in your browser.&nbsp;
+                  <a
+                    href="https://platform.openai.com/account/api-keys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-700 underline"
+                  >
+                    Get OpenAI Key
+                  </a>
+                </>
+              ) : (
+                <>
+                  Your key will be stored safely in your browser.&nbsp;
+                  <a
+                    href="https://platform.perplexity.ai/settings/api"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-700 underline"
+                  >
+                    Get Perplexity Key
+                  </a>
+                </>
+              )}
             </div>
             {keyError && (
               <div className="mt-3 text-red-600 text-xs">{keyError}</div>
@@ -171,6 +287,10 @@ export default function SecurityChatbot() {
       {error && !isKeyDialog && !keyIsInvalid && (
         <div className="text-red-600 mt-3 text-sm px-4">{error}</div>
       )}
+      <div className="text-xs px-4 pb-2 text-gray-400">
+        Powered by {providerNames[provider]}.<br />
+        Use your own API key (see settings).
+      </div>
     </div>
   );
 }
