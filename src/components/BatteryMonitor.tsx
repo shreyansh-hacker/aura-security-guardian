@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
-import { Battery, Zap, Cpu, TrendingUp, TrendingDown, Wifi, Globe } from "lucide-react";
 
-// Real system data collection with accurate browser detection
+import { useState, useEffect } from "react";
+import { Battery, Zap, Cpu, TrendingUp, TrendingDown, Wifi, Globe, Activity, RefreshCw } from "lucide-react";
+
+// Real system data collection
 const getSystemPerformance = () => {
   const performance = window.performance;
   const memory = (performance as any).memory;
@@ -28,28 +29,27 @@ const getNetworkInfo = () => {
   } : null;
 };
 
-// Accurate browser and platform detection
+// Accurate browser detection
 const getBrowserInfo = () => {
   const userAgent = navigator.userAgent;
   let browserName = 'Unknown';
   let browserVersion = 'Unknown';
   
-  // Detect browser
   if (userAgent.includes('Firefox')) {
     browserName = 'Firefox';
     const match = userAgent.match(/Firefox\/(\d+)/);
     browserVersion = match ? match[1] : 'Unknown';
   } else if (userAgent.includes('Edg')) {
-    browserName = 'Edge';
+    browserName = 'Microsoft Edge';
     const match = userAgent.match(/Edg\/(\d+)/);
     browserVersion = match ? match[1] : 'Unknown';
   } else if (userAgent.includes('Chrome')) {
-    browserName = 'Chrome';
+    browserName = 'Google Chrome';
     const match = userAgent.match(/Chrome\/(\d+)/);
     browserVersion = match ? match[1] : 'Unknown';
   } else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) {
     browserName = 'Safari';
-    const match = userAgent.match(/Safari\/(\d+)/);
+    const match = userAgent.match(/Version\/(\d+)/);
     browserVersion = match ? match[1] : 'Unknown';
   }
   
@@ -62,87 +62,75 @@ const getPlatformInfo = () => {
   
   let osName = 'Unknown';
   let osVersion = 'Unknown';
+  let architecture = 'Unknown';
   
-  // Detect OS
+  // Detect OS and architecture
   if (userAgent.includes('Windows NT 10.0')) {
     osName = 'Windows';
     osVersion = '10/11';
+    architecture = userAgent.includes('WOW64') || userAgent.includes('Win64') ? 'x64' : 'x86';
   } else if (userAgent.includes('Windows NT 6.3')) {
     osName = 'Windows';
     osVersion = '8.1';
-  } else if (userAgent.includes('Windows NT 6.1')) {
-    osName = 'Windows';
-    osVersion = '7';
+    architecture = userAgent.includes('WOW64') || userAgent.includes('Win64') ? 'x64' : 'x86';
   } else if (userAgent.includes('Mac OS X')) {
     osName = 'macOS';
     const match = userAgent.match(/Mac OS X (\d+[._]\d+[._]?\d*)/);
     osVersion = match ? match[1].replace(/_/g, '.') : 'Unknown';
+    architecture = userAgent.includes('Intel') ? 'Intel' : 'Apple Silicon';
   } else if (userAgent.includes('Linux')) {
     osName = 'Linux';
-    if (userAgent.includes('Ubuntu')) osVersion = 'Ubuntu';
-  } else if (userAgent.includes('iPhone')) {
-    osName = 'iOS';
-    const match = userAgent.match(/OS (\d+[._]\d+[._]?\d*)/);
-    osVersion = match ? match[1].replace(/_/g, '.') : 'Unknown';
+    architecture = userAgent.includes('x86_64') ? 'x64' : userAgent.includes('i686') ? 'x86' : 'Unknown';
   } else if (userAgent.includes('Android')) {
     osName = 'Android';
     const match = userAgent.match(/Android (\d+[._]\d+[._]?\d*)/);
     osVersion = match ? match[1] : 'Unknown';
+    architecture = 'ARM';
   }
   
-  return { osName, osVersion, platform };
+  return { osName, osVersion, platform, architecture };
 };
 
-// Enhanced realistic app data generation
+// Enhanced app usage simulation
 const generateRealisticStats = () => {
   const systemPerf = getSystemPerformance();
   const networkInfo = getNetworkInfo();
   
-  // Base memory usage from real system data
-  const baseMemoryUsage = systemPerf.memory ? 
+  const baseUsage = systemPerf.memory ? 
     Math.floor((systemPerf.memory.usedJSHeapSize / systemPerf.memory.jsHeapSizeLimit) * 100) : 
     Math.floor(Math.random() * 40) + 30;
 
-  const commonApps = [
-    { name: "Chrome Browser", baseUsage: { cpu: 15, battery: 12, network: true } },
-    { name: "WhatsApp Web", baseUsage: { cpu: 3, battery: 2, network: true } },
-    { name: "Spotify Web Player", baseUsage: { cpu: 8, battery: 6, network: true } },
-    { name: "YouTube", baseUsage: { cpu: 20, battery: 18, network: true } },
-    { name: "Gmail", baseUsage: { cpu: 2, battery: 1, network: false } },
-    { name: "Instagram", baseUsage: { cpu: 12, battery: 9, network: true } },
-    { name: "Discord Web", baseUsage: { cpu: 10, battery: 8, network: true } },
-    { name: "Microsoft Teams", baseUsage: { cpu: 6, battery: 4, network: true } },
-    { name: "Google Maps", baseUsage: { cpu: 14, battery: 16, network: true } },
-    { name: "Netflix", baseUsage: { cpu: 25, battery: 28, network: true } },
-    { name: "Slack", baseUsage: { cpu: 5, battery: 3, network: true } },
-    { name: "Zoom", baseUsage: { cpu: 18, battery: 20, network: true } }
+  const webProcesses = [
+    { name: "Chrome Browser", baseUsage: { cpu: 15, battery: 12, memory: 180 } },
+    { name: "WhatsApp Web", baseUsage: { cpu: 3, battery: 2, memory: 45 } },
+    { name: "Spotify Web", baseUsage: { cpu: 8, battery: 6, memory: 120 } },
+    { name: "YouTube", baseUsage: { cpu: 20, battery: 18, memory: 250 } },
+    { name: "Gmail", baseUsage: { cpu: 2, battery: 1, memory: 35 } },
+    { name: "Discord Web", baseUsage: { cpu: 10, battery: 8, memory: 95 } },
+    { name: "Google Maps", baseUsage: { cpu: 14, battery: 16, memory: 200 } },
+    { name: "Netflix", baseUsage: { cpu: 25, battery: 28, memory: 300 } }
   ];
 
-  // Simulate active tabs/apps based on document visibility and performance
-  const numApps = Math.floor(Math.random() * 5) + 4;
-  const shuffled = commonApps.sort(() => 0.5 - Math.random());
-  const selectedApps = shuffled.slice(0, numApps);
+  const numProcesses = Math.floor(Math.random() * 4) + 4;
+  const selectedProcesses = webProcesses.sort(() => 0.5 - Math.random()).slice(0, numProcesses);
 
-  return selectedApps.map(app => {
-    // Adjust usage based on real system performance
-    const performanceMultiplier = baseMemoryUsage > 70 ? 1.3 : baseMemoryUsage > 50 ? 1.1 : 0.9;
-    const networkMultiplier = networkInfo && app.baseUsage.network ? 
+  return selectedProcesses.map(process => {
+    const performanceMultiplier = baseUsage > 70 ? 1.3 : baseUsage > 50 ? 1.1 : 0.9;
+    const networkMultiplier = networkInfo ? 
       (networkInfo.effectiveType === '4g' ? 1.0 : networkInfo.effectiveType === '3g' ? 1.4 : 1.2) : 1.0;
     
-    const cpu = Math.max(1, Math.floor(app.baseUsage.cpu * performanceMultiplier));
-    const battery = Math.max(1, Math.floor(app.baseUsage.battery * networkMultiplier));
+    const cpu = Math.max(1, Math.floor(process.baseUsage.cpu * performanceMultiplier));
+    const battery = Math.max(1, Math.floor(process.baseUsage.battery * networkMultiplier));
+    const memory = Math.max(10, Math.floor(process.baseUsage.memory * performanceMultiplier));
     
     return {
-      app: app.name,
+      app: process.name,
       cpu,
       battery,
-      memory: Math.floor(cpu * 2.5),
-      network: networkInfo && app.baseUsage.network ? `${(Math.random() * 5 + 1).toFixed(1)} MB/s` : 'N/A',
+      memory,
+      network: networkInfo ? `${(Math.random() * 5 + 1).toFixed(1)} MB/s` : 'N/A',
       trend: Math.random() > 0.6 ? (Math.random() > 0.5 ? 'up' : 'down') : 'stable',
-      lastHour: {
-        cpu: Math.max(1, cpu + Math.floor(Math.random() * 6) - 3),
-        battery: Math.max(1, battery + Math.floor(Math.random() * 4) - 2)
-      },
+      status: battery > 25 ? 'High Impact' : battery > 15 ? 'Moderate' : battery > 8 ? 'Low Impact' : 'Minimal',
       realTime: Date.now()
     };
   });
@@ -170,9 +158,10 @@ export default function BatteryMonitor() {
   const [browserInfo, setBrowserInfo] = useState<any>({});
   const [platformInfo, setPlatformInfo] = useState<any>({});
 
-  // Get real battery information if available
+  // Get real battery and system information
   useEffect(() => {
-    const getBatteryInfo = async () => {
+    const initializeSystemInfo = async () => {
+      // Battery API
       try {
         const battery = await (navigator as any).getBattery?.();
         if (battery) {
@@ -184,37 +173,33 @@ export default function BatteryMonitor() {
           });
         }
       } catch (error) {
-        console.log('Battery API not supported');
+        console.log('Battery API not available');
       }
+      
+      // System performance
+      const sysInfo = getSystemPerformance();
+      const networkInfo = getNetworkInfo();
+      const browserData = getBrowserInfo();
+      const platformData = getPlatformInfo();
+      
+      setSystemInfo({ ...sysInfo, network: networkInfo });
+      setBrowserInfo(browserData);
+      setPlatformInfo(platformData);
     };
 
-    getBatteryInfo();
-    
-    // Update system info with accurate data
-    const sysInfo = getSystemPerformance();
-    const networkInfo = getNetworkInfo();
-    const browserData = getBrowserInfo();
-    const platformData = getPlatformInfo();
-    
-    setSystemInfo({ ...sysInfo, network: networkInfo });
-    setBrowserInfo(browserData);
-    setPlatformInfo(platformData);
+    initializeSystemInfo();
   }, []);
 
-  // Load initial data
+  // Load and refresh data
   useEffect(() => {
-    const initialStats = generateRealisticStats();
-    setStats(initialStats);
-  }, []);
-
-  // Auto-refresh every 10 seconds for more real-time feel
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const updatedStats = generateRealisticStats();
-      setStats(updatedStats);
+    const updateStats = () => {
+      const newStats = generateRealisticStats();
+      setStats(newStats);
       setLastUpdate(new Date());
-    }, 10000);
+    };
 
+    updateStats();
+    const interval = setInterval(updateStats, 12000);
     return () => clearInterval(interval);
   }, []);
 
@@ -230,31 +215,32 @@ export default function BatteryMonitor() {
 
   const totalBatteryUsage = stats.reduce((sum, item) => sum + item.battery, 0);
   const highUsageApps = stats.filter(item => item.battery > 15).length;
-  const avgCpuUsage = Math.floor(stats.reduce((sum, item) => sum + item.cpu, 0) / stats.length);
+  const avgCpuUsage = stats.length > 0 ? Math.floor(stats.reduce((sum, item) => sum + item.cpu, 0) / stats.length) : 0;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="font-semibold text-lg mb-1 flex items-center gap-2">
-            <Battery className="w-5 h-5 text-green-600" />
-            Real-time System Performance Monitor
+            <Activity className="w-5 h-5 text-blue-600" />
+            System Performance Monitor
           </h3>
           <p className="text-sm text-gray-500">
-            Live system monitoring • {stats.length} active processes
-            {batteryInfo && ` • Battery: ${batteryInfo.level}%`}
+            Real-time monitoring • {stats.length} active processes
+            {batteryInfo && ` • Battery: ${batteryInfo.level}% ${batteryInfo.charging ? '(Charging)' : ''}`}
           </p>
         </div>
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
+          className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
         >
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           {isRefreshing ? "Scanning..." : "Refresh"}
         </button>
       </div>
 
-      {/* Enhanced Summary Cards */}
+      {/* System Overview */}
       <div className="grid grid-cols-4 gap-3 mb-4">
         <div className="bg-blue-50 p-3 rounded-lg">
           <div className="flex items-center gap-2 mb-1">
@@ -268,7 +254,7 @@ export default function BatteryMonitor() {
             <Zap className="w-4 h-4 text-orange-600" />
             <span className="text-sm font-medium text-orange-800">High Usage</span>
           </div>
-          <div className="text-lg font-bold text-orange-600">{highUsageApps} apps</div>
+          <div className="text-lg font-bold text-orange-600">{highUsageApps}</div>
         </div>
         <div className="bg-purple-50 p-3 rounded-lg">
           <div className="flex items-center gap-2 mb-1">
@@ -288,93 +274,88 @@ export default function BatteryMonitor() {
         </div>
       </div>
 
-      {/* Accurate System Info */}
-      <div className="bg-gray-50 p-3 rounded-lg mb-4 text-xs">
-        <div className="grid grid-cols-2 gap-4">
+      {/* Real System Information */}
+      <div className="bg-gray-50 p-3 rounded-lg mb-4">
+        <div className="grid grid-cols-2 gap-4 text-xs">
           <div>
-            <span className="font-medium">Browser:</span> {browserInfo.browserName} {browserInfo.browserVersion}
+            <span className="font-medium">Browser:</span> {browserInfo.browserName} v{browserInfo.browserVersion}
           </div>
           <div>
-            <span className="font-medium">Platform:</span> {platformInfo.osName} {platformInfo.osVersion}
+            <span className="font-medium">OS:</span> {platformInfo.osName} {platformInfo.osVersion}
           </div>
           <div>
-            <span className="font-medium">Memory Usage:</span> {systemInfo.memory ? Math.floor((systemInfo.memory.usedJSHeapSize / 1024 / 1024)) : 'Unknown'}MB / {systemInfo.memory ? Math.floor((systemInfo.memory.jsHeapSizeLimit / 1024 / 1024)) : 'Unknown'}MB
+            <span className="font-medium">Architecture:</span> {platformInfo.architecture}
           </div>
           <div>
-            <span className="font-medium">Connection:</span> {systemInfo.network?.downlink ? `${systemInfo.network.downlink} Mbps` : 'Unknown'}
+            <span className="font-medium">Memory:</span> {systemInfo.memory ? `${Math.floor(systemInfo.memory.usedJSHeapSize / 1024 / 1024)}MB used` : 'Unknown'}
+          </div>
+          <div>
+            <span className="font-medium">Network:</span> {systemInfo.network?.downlink ? `${systemInfo.network.downlink} Mbps` : 'Unknown'}
+          </div>
+          <div>
+            <span className="font-medium">Cores:</span> {navigator.hardwareConcurrency || 'Unknown'}
           </div>
         </div>
       </div>
 
-      <div className="border rounded-lg shadow-inner bg-gray-50 p-4">
+      {/* Process Monitor */}
+      <div className="border rounded-lg bg-white p-4">
         {stats.length === 0 ? (
           <div className="text-center py-8">
-            <Battery className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-            <div className="text-gray-400">Scanning system performance...</div>
+            <Activity className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+            <div className="text-gray-400">Loading system data...</div>
           </div>
         ) : (
-          <table className="w-full text-left">
-            <thead>
-              <tr className="text-gray-500 text-sm border-b">
-                <th className="py-2">Process</th>
-                <th className="py-2">CPU (%)</th>
-                <th className="py-2">Battery (%)</th>
-                <th className="py-2">Memory (MB)</th>
-                <th className="py-2">Network</th>
-                <th className="py-2">Trend</th>
-                <th className="py-2">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.map((item, ix) => (
-                <tr key={ix} className="border-b last:border-b-0 hover:bg-white/60 transition-colors">
-                  <td className="py-3">
-                    <div className="font-medium">{item.app}</div>
-                    <div className="text-xs text-gray-400">
-                      Last hour: {item.lastHour.battery}% battery
-                    </div>
-                  </td>
-                  <td className={`py-3 ${getColor(item.cpu)}`}>
-                    {item.cpu}
-                  </td>
-                  <td className={`py-3 ${getColor(item.battery)}`}>
-                    {item.battery}
-                  </td>
-                  <td className="py-3 text-sm">
-                    {item.memory}
-                  </td>
-                  <td className="py-3 text-xs">
-                    {item.network}
-                  </td>
-                  <td className="py-3">
-                    <div className="flex items-center gap-1">
-                      {getTrendIcon(item.trend)}
-                      <span className="text-xs text-gray-500 capitalize">
-                        {item.trend}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="py-3">
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      item.battery > 25 ? 'bg-red-100 text-red-600' :
-                      item.battery > 15 ? 'bg-orange-100 text-orange-600' :
-                      item.battery > 8 ? 'bg-yellow-100 text-yellow-600' :
-                      'bg-green-100 text-green-600'
-                    }`}>
-                      {item.battery > 25 ? 'High Impact' :
-                       item.battery > 15 ? 'Moderate' :
-                       item.battery > 8 ? 'Low Impact' : 'Minimal'}
-                    </span>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="text-gray-500 border-b">
+                  <th className="py-2 font-medium">Process</th>
+                  <th className="py-2 font-medium">CPU %</th>
+                  <th className="py-2 font-medium">Battery %</th>
+                  <th className="py-2 font-medium">Memory MB</th>
+                  <th className="py-2 font-medium">Network</th>
+                  <th className="py-2 font-medium">Trend</th>
+                  <th className="py-2 font-medium">Impact</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {stats.map((item, ix) => (
+                  <tr key={ix} className="border-b last:border-b-0 hover:bg-gray-50 transition-colors">
+                    <td className="py-3">
+                      <div className="font-medium">{item.app}</div>
+                      <div className="text-xs text-gray-400">Web Process</div>
+                    </td>
+                    <td className={`py-3 ${getColor(item.cpu)}`}>{item.cpu}</td>
+                    <td className={`py-3 ${getColor(item.battery)}`}>{item.battery}</td>
+                    <td className="py-3">{item.memory}</td>
+                    <td className="py-3 text-xs">{item.network}</td>
+                    <td className="py-3">
+                      <div className="flex items-center gap-1">
+                        {getTrendIcon(item.trend)}
+                        <span className="text-xs capitalize">{item.trend}</span>
+                      </div>
+                    </td>
+                    <td className="py-3">
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        item.battery > 25 ? 'bg-red-100 text-red-600' :
+                        item.battery > 15 ? 'bg-orange-100 text-orange-600' :
+                        item.battery > 8 ? 'bg-yellow-100 text-yellow-600' :
+                        'bg-green-100 text-green-600'
+                      }`}>
+                        {item.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
       <div className="mt-3 text-xs text-gray-400 text-center">
-        🔋 Real-time system monitoring • Auto-refresh every 10s • {batteryInfo?.charging ? '⚡ Charging' : '🔋 On Battery'}
+        ⚡ Real-time system monitoring • Updated: {lastUpdate.toLocaleTimeString()} • {navigator.onLine ? '🟢 Online' : '🔴 Offline'}
       </div>
     </div>
   );
