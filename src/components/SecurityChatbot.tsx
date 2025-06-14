@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { Shield } from "lucide-react";
-import { useAIAssistant } from "../hooks/useAIAssistant";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 // Improved interview steps: "type" = "options"
@@ -49,12 +48,65 @@ const interviewSteps = [
   }
 ];
 
+// Mock AI response function
+const getMockAIResponse = (answers: { [key: string]: string }) => {
+  const topic = answers.topic || "";
+  const device = answers.device || "";
+  const details = answers.details || "";
+
+  // Generate contextual security advice based on the answers
+  if (topic.includes("Suspicious email") || topic.includes("Phishing")) {
+    return `Based on your concern about suspicious emails on your ${device}, here's what you should do:
+
+1. **Don't click any links** or download attachments from the suspicious email
+2. **Check the sender's address** carefully - look for misspellings or suspicious domains
+3. **Report the email** as spam/phishing to your email provider
+4. **Delete the email** immediately after reporting
+5. **Enable two-factor authentication** on all your important accounts
+
+If you've already clicked on links, change your passwords immediately and monitor your accounts for unusual activity.`;
+  }
+
+  if (topic.includes("Virus") || topic.includes("Malware")) {
+    return `For potential malware on your ${device}, follow these steps:
+
+1. **Disconnect from the internet** to prevent data theft
+2. **Run a full antivirus scan** using updated antivirus software
+3. **Boot in safe mode** if the device is running slowly
+4. **Check for unusual programs** in your installed applications
+5. **Update your operating system** and all software immediately
+
+If problems persist, consider professional help or backing up important data and performing a system restore.`;
+  }
+
+  if (topic.includes("App permissions")) {
+    return `To secure app permissions on your ${device}:
+
+1. **Review app permissions** in your device settings
+2. **Revoke unnecessary permissions** especially camera, microphone, and location access
+3. **Only grant permissions** that are essential for the app's function
+4. **Regularly audit** your installed apps and remove unused ones
+5. **Download apps only** from official app stores
+
+Pay special attention to apps requesting access to contacts, photos, or financial information.`;
+  }
+
+  // Default response
+  return `Based on your ${topic.toLowerCase()} concern on your ${device}, here are general security recommendations:
+
+1. **Keep your device updated** with the latest security patches
+2. **Use strong, unique passwords** for all accounts
+3. **Enable two-factor authentication** wherever possible
+4. **Be cautious with downloads** and email attachments
+5. **Regular security scans** and monitoring
+
+If you're still concerned, consider consulting with a cybersecurity professional or your device manufacturer's support team.`;
+};
+
 export default function SecurityChatbot() {
   // Each message: { from: "bot" | "user", text: string }
   const [messages, setMessages] = useState<{ from: string; text: string }[]>([]);
-  const [isKeyDialog, setIsKeyDialog] = useState(false);
-  const [keyInput, setKeyInput] = useState("");
-  const [keyError, setKeyError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Live Answering states
   const [step, setStep] = useState(0); // which interview step we are on
@@ -62,15 +114,6 @@ export default function SecurityChatbot() {
   const [submitted, setSubmitted] = useState(false);
 
   const [optionValue, setOptionValue] = useState(""); // for radio/select
-
-  const {
-    openaiApiKey,
-    setOpenaiApiKey,
-    isLoading,
-    error,
-    keyIsInvalid,
-    sendQuestion,
-  } = useAIAssistant();
 
   // Start the interview if it's the user's first visit
   useEffect(() => {
@@ -91,17 +134,6 @@ export default function SecurityChatbot() {
     }
   }, [messages.length]);
 
-  // Open API key dialog if needed
-  useEffect(() => {
-    if (keyIsInvalid || (!openaiApiKey && !isKeyDialog)) {
-      setIsKeyDialog(true);
-      setKeyError(
-        error || "Please enter a valid OpenAI API key to continue."
-      );
-    }
-    if (!keyIsInvalid && isKeyDialog) setKeyError(null);
-  }, [keyIsInvalid, openaiApiKey, error]);
-
   // Updated useEffect to reset optionValue on step change
   useEffect(() => {
     setOptionValue("");
@@ -120,13 +152,14 @@ export default function SecurityChatbot() {
     // Collect answer
     const currentStepKey = currentStep.key;
     const nextStep = step + 1;
-    setAnswers((prev) => ({
-      ...prev,
+    const updatedAnswers = {
+      ...answers,
       [currentStepKey]: valueToUse,
-    }));
+    };
+    setAnswers(updatedAnswers);
     setOptionValue("");
 
-    // If more steps, ask next question; else, process & summarize/ask AI
+    // If more steps, ask next question; else, process & summarize
     if (nextStep < interviewSteps.length) {
       setStep(nextStep);
       setTimeout(() => {
@@ -139,13 +172,15 @@ export default function SecurityChatbot() {
       // End of interview – process everything
       setStep(nextStep);
       setSubmitted(true);
-      setTimeout(async () => {
-        // Build a system + user prompt summarizing the answers
+      setIsLoading(true);
+      
+      setTimeout(() => {
+        // Build a summary
         const summaryText = `Thank you! Here's what you've told me:
         
-- Topic: ${answers["topic"] ?? valueToUse}
-- Device: ${answers["device"] ?? ""}
-- Details: ${answers["details"] ?? ""}
+- Topic: ${updatedAnswers["topic"] ?? valueToUse}
+- Device: ${updatedAnswers["device"] ?? ""}
+- Details: ${updatedAnswers["details"] ?? ""}
 
 I will now analyze your situation and provide step-by-step advice.`;
 
@@ -154,38 +189,21 @@ I will now analyze your situation and provide step-by-step advice.`;
           { from: "bot", text: summaryText },
           { from: "bot", text: "Processing your information..." },
         ]);
-        // Prepare a full context prompt for the AI
-        const fullPrompt = `You are a friendly security assistant. The user has answered these questions:
-- Topic: ${answers["topic"] ?? valueToUse}
-- Device: ${answers["device"] ?? ""}
-- Details: ${answers["details"] ?? ""}
 
-Provide a clear, helpful, step-by-step answer and next steps for this user's security concern.`;
-
-        const aiReply = await sendQuestion(fullPrompt);
-        setMessages((m) => [
-          ...m.slice(0, -1), // remove "Processing your information..."
-          {
-            from: "bot",
-            text: aiReply || error || "Sorry, there was a problem. Try again.",
-          },
-        ]);
+        // Generate AI response
+        setTimeout(() => {
+          const aiReply = getMockAIResponse(updatedAnswers);
+          setMessages((m) => [
+            ...m.slice(0, -1), // remove "Processing your information..."
+            {
+              from: "bot",
+              text: aiReply,
+            },
+          ]);
+          setIsLoading(false);
+        }, 1500);
       }, 600);
     }
-  }
-
-  function handleKeySave() {
-    if (!keyInput.trim()) return;
-    setOpenaiApiKey(keyInput.trim());
-    setIsKeyDialog(false);
-    setKeyInput("");
-    setKeyError(null);
-  }
-
-  function handleOpenKeyDialog() {
-    setIsKeyDialog(true);
-    setKeyInput("");
-    setKeyError(null);
   }
 
   return (
@@ -193,14 +211,6 @@ Provide a clear, helpful, step-by-step answer and next steps for this user's sec
       <div className="bg-gradient-to-tr from-blue-400 via-blue-100 to-white px-6 py-3 flex items-center gap-2">
         <Shield className="w-6 h-6 text-blue-600" />
         <h3 className="font-semibold text-lg text-blue-900">LiveAnswering</h3>
-        <button
-          className="ml-auto text-xs px-3 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium"
-          onClick={handleOpenKeyDialog}
-          disabled={isLoading}
-          aria-label="Change API Key"
-        >
-          API Key
-        </button>
       </div>
       <div className="bg-gray-50 px-4 py-3 h-64 overflow-y-auto mb-2 space-y-1 scrollbar-thin scrollbar-thumb-blue-100">
         {messages.map((msg, i) => (
@@ -214,7 +224,7 @@ Provide a clear, helpful, step-by-step answer and next steps for this user's sec
             {msg.from === "bot" ? (
               <span className="flex items-center">
                 <Shield className="w-4 h-4 mr-1 drop-shadow" />
-                <span className={`text-sm rounded-xl px-2 py-1 ${msg.text === "Thinking..." ? "italic opacity-60" : ""}`}>
+                <span className={`text-sm rounded-xl px-2 py-1 ${msg.text === "Processing your information..." ? "italic opacity-60" : ""}`}>
                   {msg.text}
                 </span>
               </span>
@@ -256,65 +266,9 @@ Provide a clear, helpful, step-by-step answer and next steps for this user's sec
         </div>
       )}
 
-      {/* API Key Dialog */}
-      {isKeyDialog && (
-        <div className="fixed inset-0 z-30 bg-black bg-opacity-40 flex items-center justify-center">
-          <div className="bg-white rounded-2xl p-8 shadow-lg max-w-sm w-full">
-            <div className="mb-3 font-bold text-lg">Enter your OpenAI API Key</div>
-            <input
-              className="border px-2 py-2 rounded w-full mb-3"
-              placeholder="sk-..."
-              type="password"
-              value={keyInput}
-              onChange={(e) => setKeyInput(e.target.value)}
-              autoFocus
-            />
-            <div className="flex gap-2">
-              <button
-                className="bg-blue-600 text-white px-3 py-1 rounded"
-                onClick={handleKeySave}
-                disabled={!keyInput.trim()}
-              >
-                Save
-              </button>
-              {!keyIsInvalid && (
-                <button
-                  className="bg-gray-200 px-3 py-1 rounded"
-                  onClick={() => {
-                    setIsKeyDialog(false);
-                    setKeyInput("");
-                    setKeyError(null);
-                  }}
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
-            <div className="mt-2 text-xs text-gray-600">
-              Your key will be stored safely in your browser.&nbsp;
-              <a
-                href="https://platform.openai.com/account/api-keys"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-700 underline"
-              >
-                Get OpenAI Key
-              </a>
-            </div>
-            {keyError && (
-              <div className="mt-3 text-red-600 text-xs">{keyError}</div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* General Error message */}
-      {error && !isKeyDialog && !keyIsInvalid && (
-        <div className="text-red-600 mt-3 text-sm px-4">{error}</div>
-      )}
       <div className="text-xs px-4 pb-2 text-gray-400">
-        Powered by OpenAI.<br />
-        Use your own API key (see settings).
+        AI-powered security assistant.<br />
+        Providing personalized cybersecurity guidance.
       </div>
     </div>
   );
