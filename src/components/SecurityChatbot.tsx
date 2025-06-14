@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Shield } from "lucide-react";
 import { useOpenAIChat } from "../hooks/useOpenAI";
 
@@ -14,9 +14,24 @@ export default function SecurityChatbot() {
     setApiKey,
     isLoading,
     error,
+    keyIsInvalid,
     sendQuestion,
   } = useOpenAIChat();
   const [isKeyDialog, setIsKeyDialog] = useState(false);
+  const [keyError, setKeyError] = useState<string | null>(null);
+
+  // Show the key dialog if the API key is missing or invalid
+  useEffect(() => {
+    if (keyIsInvalid || (!apiKey && !isKeyDialog)) {
+      setIsKeyDialog(true);
+      setKeyError(error || "Please enter a valid OpenAI API key.");
+    }
+    // Only set error in key dialog if API key is invalid
+    if (!keyIsInvalid && isKeyDialog) {
+      setKeyError(null);
+    }
+    // eslint-disable-next-line
+  }, [keyIsInvalid, apiKey, error]);
 
   async function handleSend() {
     if (!input.trim() || isLoading) return;
@@ -44,7 +59,14 @@ export default function SecurityChatbot() {
       setApiKey(keyInput.trim());
       setKeyInput("");
       setIsKeyDialog(false);
+      setKeyError(null);
     }
+  }
+
+  function handleOpenKeyDialog() {
+    setIsKeyDialog(true);
+    setKeyInput("");
+    setKeyError(null);
   }
 
   return (
@@ -52,6 +74,14 @@ export default function SecurityChatbot() {
       <div className="bg-gradient-to-tr from-blue-400 via-blue-100 to-white px-6 py-3 flex items-center gap-2">
         <Shield className="w-6 h-6 text-blue-600" />
         <h3 className="font-semibold text-lg text-blue-900">Security Chatbot</h3>
+        <button
+          className="ml-auto text-xs px-3 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium"
+          onClick={handleOpenKeyDialog}
+          disabled={isLoading}
+          aria-label="Change API Key"
+        >
+          API Key
+        </button>
       </div>
       <div className="bg-gray-50 px-4 py-3 h-64 overflow-y-auto mb-2 space-y-1 scrollbar-thin scrollbar-thumb-blue-100">
         {messages.map((msg, i) => (
@@ -104,6 +134,7 @@ export default function SecurityChatbot() {
               value={keyInput}
               type="password"
               onChange={e => setKeyInput(e.target.value)}
+              autoFocus
             />
             <div className="flex gap-2">
               <button
@@ -113,12 +144,15 @@ export default function SecurityChatbot() {
               >
                 Save
               </button>
-              <button
-                className="bg-gray-200 px-3 py-1 rounded"
-                onClick={() => { setIsKeyDialog(false); setKeyInput(""); }}
-              >
-                Cancel
-              </button>
+              {/* If key is invalid, don't allow canceling dialog */}
+              {!keyIsInvalid && (
+                <button
+                  className="bg-gray-200 px-3 py-1 rounded"
+                  onClick={() => { setIsKeyDialog(false); setKeyInput(""); setKeyError(null); }}
+                >
+                  Cancel
+                </button>
+              )}
             </div>
             <div className="mt-2 text-xs text-gray-600">
               Your key will be stored safely in your browser.{" "}
@@ -126,12 +160,15 @@ export default function SecurityChatbot() {
                 Get API Key
               </a>
             </div>
+            {keyError && (
+              <div className="mt-3 text-red-600 text-xs">{keyError}</div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Error message */}
-      {error && !isKeyDialog && (
+      {/* General Error message */}
+      {error && !isKeyDialog && !keyIsInvalid && (
         <div className="text-red-600 mt-3 text-sm px-4">{error}</div>
       )}
     </div>

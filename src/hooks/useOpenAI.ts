@@ -10,11 +10,14 @@ export function useOpenAIChat() {
     return localStorage.getItem(API_KEY_KEY) || "";
   });
   const [error, setError] = useState<string | null>(null);
+  const [keyIsInvalid, setKeyIsInvalid] = useState(false);
 
   // Save key in localStorage when set
   function saveApiKey(key: string) {
     setApiKey(key);
     localStorage.setItem(API_KEY_KEY, key);
+    setKeyIsInvalid(false);
+    setError(null);
   }
 
   async function sendQuestion(question: string): Promise<string> {
@@ -22,6 +25,7 @@ export function useOpenAIChat() {
 
     if (!apiKey) {
       setError("No OpenAI API key set");
+      setKeyIsInvalid(true);
       return "";
     }
 
@@ -53,8 +57,10 @@ export function useOpenAIChat() {
       if (!res.ok) {
         if (res.status === 401) {
           setError("Invalid API key.");
+          setKeyIsInvalid(true);
         } else if (res.status === 429) {
-          setError("Rate limit exceeded. Try again later.");
+          setError("Rate limit exceeded. Try a different key or check usage at platform.openai.com/usage.");
+          setKeyIsInvalid(true);
         } else {
           setError("Error from OpenAI: " + res.statusText);
         }
@@ -68,6 +74,7 @@ export function useOpenAIChat() {
           ? data.choices[0].message.content.trim()
           : "Sorry, I couldn't get an answer. Please try again.";
       setIsLoading(false);
+      setKeyIsInvalid(false);
       return answer;
     } catch (e) {
       setError("Network error. Please check your connection.");
@@ -81,6 +88,7 @@ export function useOpenAIChat() {
     setApiKey: saveApiKey,
     isLoading,
     error,
+    keyIsInvalid,
     sendQuestion,
   };
 }
