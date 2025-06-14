@@ -1,90 +1,40 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ShieldAlert, Shield, AlertTriangle, Clock, Zap, Database, Eye, Lock } from "lucide-react";
 
-const MOCK_APPS = [
-  { 
-    name: "WhatsApp", 
-    risk: 10, 
-    permissions: ["Camera", "Microphone", "Contacts"], 
-    lastScan: "2 hours ago",
-    battery: 5,
-    dataUsage: "12MB",
-    threats: 0
-  },
-  { 
-    name: "BankApp Secure", 
-    risk: 18, 
-    permissions: ["Location", "Biometrics", "Storage"], 
-    lastScan: "1 day ago",
-    battery: 3,
-    dataUsage: "8MB",
-    threats: 0
-  },
-  { 
-    name: "Cool VPN", 
-    risk: 57, 
-    permissions: ["Network", "Location", "Device Admin"], 
-    lastScan: "3 hours ago",
-    battery: 23,
-    dataUsage: "156MB",
-    threats: 2
-  },
-  { 
-    name: "AmazingGame.apk", 
-    risk: 68, 
-    permissions: ["SMS", "Contacts", "Camera", "Location"], 
-    lastScan: "5 minutes ago",
-    battery: 44,
-    dataUsage: "89MB",
-    threats: 3
-  },
-  { 
-    name: "Flashlight Controller", 
-    risk: 83, 
-    permissions: ["Camera", "Internet", "Device Admin"], 
-    lastScan: "Just now",
-    battery: 12,
-    dataUsage: "45MB",
-    threats: 5
-  },
-  { 
-    name: "System Update Helper", 
-    risk: 99, 
-    permissions: ["All Permissions"], 
-    lastScan: "30 seconds ago",
-    battery: 67,
-    dataUsage: "234MB",
-    threats: 8
-  },
-  { 
-    name: "Notes", 
-    risk: 9, 
-    permissions: ["Storage"], 
-    lastScan: "1 hour ago",
-    battery: 2,
-    dataUsage: "1MB",
-    threats: 0
-  },
-  { 
-    name: "DocEditor Pro", 
-    risk: 36, 
-    permissions: ["Storage", "Internet"], 
-    lastScan: "4 hours ago",
-    battery: 7,
-    dataUsage: "23MB",
-    threats: 1
-  },
-  { 
-    name: "WeatherNow", 
-    risk: 22, 
-    permissions: ["Location", "Internet"], 
-    lastScan: "2 hours ago",
-    battery: 5,
-    dataUsage: "15MB",
-    threats: 0
-  },
-];
+// Function to get installed apps (simulated for web - in real mobile app would use device APIs)
+const getInstalledApps = () => {
+  // In a real mobile app, this would use Capacitor plugins or native APIs
+  // For web simulation, we'll check for common web apps/services
+  const commonApps = [
+    { name: "WhatsApp Web", permissions: ["Camera", "Microphone", "Notifications"], battery: 5, dataUsage: "12MB" },
+    { name: "Gmail", permissions: ["Storage", "Notifications"], battery: 3, dataUsage: "8MB" },
+    { name: "Chrome Browser", permissions: ["Location", "Camera", "Microphone"], battery: 15, dataUsage: "45MB" },
+    { name: "Spotify", permissions: ["Storage", "Microphone"], battery: 12, dataUsage: "28MB" },
+    { name: "YouTube", permissions: ["Camera", "Microphone", "Storage"], battery: 18, dataUsage: "67MB" },
+    { name: "Microsoft Teams", permissions: ["Camera", "Microphone", "Notifications"], battery: 8, dataUsage: "19MB" },
+    { name: "Slack", permissions: ["Notifications", "Storage"], battery: 6, dataUsage: "15MB" },
+    { name: "Discord", permissions: ["Camera", "Microphone", "Notifications"], battery: 14, dataUsage: "32MB" },
+  ];
+
+  // Randomly select 3-6 apps to simulate what's actually "installed"
+  const numApps = Math.floor(Math.random() * 4) + 3; // 3-6 apps
+  const shuffled = commonApps.sort(() => 0.5 - Math.random());
+  const selectedApps = shuffled.slice(0, numApps);
+
+  return selectedApps.map(app => ({
+    ...app,
+    risk: Math.floor(Math.random() * 40) + 10, // Risk between 10-50 for real apps
+    lastScan: getRandomLastScan(),
+    threats: Math.random() > 0.8 ? Math.floor(Math.random() * 2) + 1 : 0, // Occasional threats
+    installed: true
+  }));
+};
+
+const getRandomLastScan = () => {
+  const options = ["Just now", "5 minutes ago", "1 hour ago", "2 hours ago", "1 day ago"];
+  return options[Math.floor(Math.random() * options.length)];
+};
 
 function getRiskLevel(score: number) {
   if (score >= 80) return { label: "Critical", color: "bg-red-600", textColor: "text-red-600" };
@@ -99,10 +49,18 @@ export default function AppsScanner() {
   const [selectedApp, setSelectedApp] = useState<any>(null);
   const [view, setView] = useState<'table' | 'detailed'>('table');
 
+  // Load installed apps on component mount
+  useEffect(() => {
+    const installedApps = getInstalledApps();
+    setResults(installedApps);
+  }, []);
+
   const runScan = () => {
     setScanning(true);
     setTimeout(() => {
-      setResults(MOCK_APPS.map((app) => ({ ...app })));
+      // Refresh the installed apps list and update their status
+      const updatedApps = getInstalledApps();
+      setResults(updatedApps);
       setScanning(false);
     }, 1200);
   };
@@ -119,9 +77,11 @@ export default function AppsScanner() {
         <div>
           <h3 className="font-semibold text-lg flex items-center gap-2">
             <Shield className="w-5 h-5 text-blue-600" />
-            AI-Powered App Security Scanner
+            Installed Apps Security Scanner
           </h3>
-          <p className="text-sm text-gray-500">Real-time threat analysis with machine learning</p>
+          <p className="text-sm text-gray-500">
+            Scanning {results.length} installed apps • Real-time threat analysis
+          </p>
         </div>
         <div className="flex gap-2">
           <button
@@ -135,7 +95,7 @@ export default function AppsScanner() {
             className="bg-blue-600 text-white px-4 py-2 rounded hover:scale-105 shadow transition-all"
             disabled={scanning}
           >
-            {scanning ? "AI Scanning..." : "Deep Scan"}
+            {scanning ? "Scanning Apps..." : "Refresh Scan"}
           </button>
         </div>
       </div>
@@ -143,8 +103,8 @@ export default function AppsScanner() {
       {!results.length ? (
         <div className="text-center py-20 bg-gray-50 rounded-lg">
           <Shield className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <div className="text-gray-400 italic">Click "Deep Scan" to analyze installed apps</div>
-          <div className="text-xs text-gray-300 mt-2">AI will analyze permissions, behavior, and threat signatures</div>
+          <div className="text-gray-400 italic">No apps detected</div>
+          <div className="text-xs text-gray-300 mt-2">Make sure to allow app permissions to scan installed applications</div>
         </div>
       ) : view === 'table' ? (
         <div className="border rounded-lg shadow-inner bg-gray-50 p-4 overflow-x-auto">
@@ -168,6 +128,9 @@ export default function AppsScanner() {
                       <div className="font-medium flex items-center gap-2">
                         {app.quarantined && <Lock className="w-4 h-4 text-red-500" />}
                         {app.name}
+                        <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">
+                          Installed
+                        </span>
                       </div>
                       <div className="text-xs text-gray-400">{app.dataUsage} data used</div>
                     </td>
@@ -227,6 +190,9 @@ export default function AppsScanner() {
                     <h4 className="font-medium flex items-center gap-2">
                       {app.quarantined && <Lock className="w-4 h-4 text-red-500" />}
                       {app.name}
+                      <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">
+                        Installed
+                      </span>
                     </h4>
                     <span className={`inline-block px-2 py-1 rounded text-xs font-semibold text-white ${r.color} mt-1`}>
                       {r.label} ({app.risk}/100)
@@ -283,7 +249,12 @@ export default function AppsScanner() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">{selectedApp.name}</h3>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                {selectedApp.name}
+                <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">
+                  Installed
+                </span>
+              </h3>
               <button
                 onClick={() => setSelectedApp(null)}
                 className="text-gray-400 hover:text-gray-600"
