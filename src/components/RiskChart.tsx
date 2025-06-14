@@ -23,7 +23,7 @@ export default function RiskChart({ score }: { score: number }) {
       data={data}
     >
       <RadialBar
-        minAngle={20}
+        minPointSize={5}
         clockWise
         dataKey="value"
         cornerRadius={7}
