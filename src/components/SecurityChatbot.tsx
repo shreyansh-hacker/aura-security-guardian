@@ -1,63 +1,51 @@
 
 import { useState } from "react";
 import { Shield } from "lucide-react";
-
-const FAQS = [
-  {
-    keywords: ["phishing", "avoid phishing", "fake sites", "phishing sites"],
-    question: "How do I avoid phishing sites?",
-    answer: "Never click on unknown or suspicious URLs, especially in messages or emails. Check the sender address and look for typos."
-  },
-  {
-    keywords: ["app safe", "app is safe", "scan app", "apk", "untrusted"],
-    question: "How can I check if an app is safe?",
-    answer: "Scan apps regularly and avoid installing APK files from untrusted sources."
-  },
-  {
-    keywords: ["real-time protection", "real time protection", "what is real-time", "threats detected"],
-    question: "What is real-time protection?",
-    answer: "It means threats are detected and blocked as soon as they appear, not just during scans."
-  },
-  {
-    keywords: ["battery draining", "battery drain", "why battery", "background", "push notification"],
-    question: "Why is my battery draining fast?",
-    answer: "Battery may drain faster if apps run in background, send push notifications, or perform heavy tasks."
-  },
-];
-
-function findFAQMatch(userInput: string) {
-  const input = userInput.toLowerCase();
-  for (const faq of FAQS) {
-    if (
-      faq.keywords.some(kw => input.includes(kw))
-      || input === faq.question.toLowerCase()
-    ) {
-      return faq;
-    }
-  }
-  return null;
-}
+import { useOpenAIChat } from "../hooks/useOpenAI";
 
 export default function SecurityChatbot() {
-  const [messages, setMessages] = useState<{ from: string, text: string }[]>([
-    { from: "bot", text: "Hi! I'm your security assistant. Ask me about threats, safe browsing, battery tips, and more." }
+  const [messages, setMessages] = useState<{ from: string; text: string }[]>([
+    { from: "bot", text: "Hi! I'm your AI security assistant. Ask me anything about device, app, or online safety." },
   ]);
   const [input, setInput] = useState("");
+  const [keyInput, setKeyInput] = useState("");
+  const {
+    apiKey,
+    setApiKey,
+    isLoading,
+    error,
+    sendQuestion,
+  } = useOpenAIChat();
+  const [isKeyDialog, setIsKeyDialog] = useState(false);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  async function handleSend() {
+    if (!input.trim() || isLoading) return;
+    setMessages((m) => [...m, { from: "user", text: input.trim() }]);
+    if (!apiKey) {
+      setIsKeyDialog(true);
+      setInput("");
+      return;
+    }
     const question = input.trim();
-    setMessages(m => [...m, { from: "user", text: question }]);
-    const hit = findFAQMatch(question);
-
-    const answer =
-      hit?.answer ||
-      "Sorry, I don't know about that yet. Try asking me about phishing, app safety, or battery issues!";
-    setTimeout(() => {
-      setMessages(m => [...m, { from: "bot", text: answer }]);
-    }, 600);
     setInput("");
-  };
+    setMessages((m) => [
+      ...m,
+      { from: "bot", text: "Thinking..." },
+    ]);
+    const answer = await sendQuestion(question);
+    setMessages((m) => [
+      ...m.slice(0, -1), // Remove 'Thinking...'
+      { from: "bot", text: answer || (error || "Sorry, there was a problem. Try again.") },
+    ]);
+  }
+
+  function handleKeySave() {
+    if (keyInput.trim()) {
+      setApiKey(keyInput.trim());
+      setKeyInput("");
+      setIsKeyDialog(false);
+    }
+  }
 
   return (
     <div>
@@ -71,13 +59,16 @@ export default function SecurityChatbot() {
                 ? "justify-start text-blue-700"
                 : "justify-end text-gray-800"}`}
           >
-            {msg.from === "bot" &&
+            {msg.from === "bot" ? (
               <span className="flex items-center">
                 <Shield className="w-4 h-4 mr-1" />
-                <span className="text-sm">{msg.text}</span>
-              </span>}
-            {msg.from === "user" &&
-              <span className="text-sm bg-blue-100 px-3 py-1 rounded-xl">{msg.text}</span>}
+                <span className={`text-sm ${msg.text === "Thinking..." ? "italic opacity-60" : ""}`}>
+                  {msg.text}
+                </span>
+              </span>
+            ) : (
+              <span className="text-sm bg-blue-100 px-3 py-1 rounded-xl">{msg.text}</span>
+            )}
           </div>
         ))}
       </div>
@@ -86,18 +77,60 @@ export default function SecurityChatbot() {
           className="border px-3 py-2 rounded flex-1"
           placeholder="Type your security question"
           value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") handleSend(); }}
+          disabled={isLoading}
         />
         <button
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:scale-105 shadow"
+          className={`bg-blue-600 text-white px-4 py-2 rounded hover:scale-105 shadow ${isLoading || !input.trim() ? "opacity-60" : ""}`}
           onClick={handleSend}
-          disabled={!input.trim()}
+          disabled={isLoading || !input.trim()}
         >
           Send
         </button>
       </div>
+
+      {/* API Key Dialog */}
+      {isKeyDialog && (
+        <div className="fixed inset-0 z-30 bg-black bg-opacity-40 flex items-center justify-center">
+          <div className="bg-white rounded p-6 shadow-lg max-w-sm w-full">
+            <div className="mb-2 font-bold text-lg">Enter your OpenAI API Key</div>
+            <input
+              className="border px-2 py-2 rounded w-full mb-3"
+              placeholder="sk-..."
+              value={keyInput}
+              type="password"
+              onChange={e => setKeyInput(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <button
+                className="bg-blue-600 text-white px-3 py-1 rounded"
+                onClick={handleKeySave}
+                disabled={!keyInput.trim()}
+              >
+                Save
+              </button>
+              <button
+                className="bg-gray-200 px-3 py-1 rounded"
+                onClick={() => { setIsKeyDialog(false); setKeyInput(""); }}
+              >
+                Cancel
+              </button>
+            </div>
+            <div className="mt-2 text-xs text-gray-600">
+              Your key will be stored safely in your browser.{" "}
+              <a href="https://platform.openai.com/account/api-keys" target="_blank" rel="noopener noreferrer" className="text-blue-700 underline">
+                Get API Key
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error message */}
+      {error && !isKeyDialog && (
+        <div className="text-red-600 mt-3 text-sm">{error}</div>
+      )}
     </div>
   );
 }
-
