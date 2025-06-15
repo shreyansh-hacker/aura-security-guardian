@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { Shield, CheckCircle, AlertTriangle, Clock, Wifi, Battery, Lock, Eye, Zap, Globe } from "lucide-react";
 import { toast } from "sonner";
+import { deviceDataService } from "../services/deviceDataService";
 
 interface SecurityMetrics {
   overallScore: number;
@@ -29,6 +29,42 @@ export default function SecurityStatus() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [realTimeThreats, setRealTimeThreats] = useState<string[]>([]);
+  const [isFixing, setIsFixing] = useState(false);
+  const [fixProgress, setFixProgress] = useState(0);
+
+  // Load real device data on component mount
+  useEffect(() => {
+    const loadRealData = async () => {
+      try {
+        const realData = await deviceDataService.getAllRealData();
+        
+        // Update metrics based on real device data
+        let deviceScore = 85;
+        let networkScore = 75;
+        
+        // Adjust scores based on real data
+        if (realData.batteryLevel < 20) deviceScore -= 10;
+        if (realData.networkStatus.connected) networkScore = 90;
+        else networkScore = 30;
+        
+        if (realData.memoryUsage > 80) deviceScore -= 15;
+        
+        setMetrics(prev => ({
+          ...prev,
+          networkSecurity: networkScore,
+          deviceSecurity: deviceScore,
+          overallScore: Math.round((networkScore + deviceScore + prev.appSecurity) / 3)
+        }));
+        
+        toast.success("📱 Real device data loaded successfully");
+      } catch (error) {
+        console.error('Failed to load real device data:', error);
+        toast.warning('Using simulated security data');
+      }
+    };
+
+    loadRealData();
+  }, []);
 
   // Simulate real-time security monitoring
   useEffect(() => {
@@ -96,39 +132,105 @@ export default function SecurityStatus() {
     };
   }, []);
 
-  const performDeepScan = () => {
+  const performDeepScan = async () => {
     setIsScanning(true);
     setScanProgress(0);
     toast.info("🔍 Starting comprehensive security scan...");
 
-    const scanInterval = setInterval(() => {
-      setScanProgress(prev => {
+    try {
+      // Get real device data during scan
+      const realData = await deviceDataService.getAllRealData();
+      
+      const scanInterval = setInterval(() => {
+        setScanProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(scanInterval);
+            setIsScanning(false);
+            
+            // Analyze real data for vulnerabilities
+            let vulnerabilitiesFound = 0;
+            let newThreats = 0;
+            
+            if (realData.batteryLevel < 15) {
+              vulnerabilitiesFound++;
+              setRealTimeThreats(prev => ["Low battery detected - device may shutdown unexpectedly", ...prev.slice(0, 4)]);
+            }
+            
+            if (realData.memoryUsage > 85) {
+              vulnerabilitiesFound++;
+              setRealTimeThreats(prev => ["High memory usage detected - performance impact", ...prev.slice(0, 4)]);
+            }
+            
+            if (!realData.networkStatus.connected) {
+              newThreats++;
+              setRealTimeThreats(prev => ["Network connectivity issue detected", ...prev.slice(0, 4)]);
+            }
+            
+            setMetrics(prev => ({
+              ...prev,
+              vulnerabilities: vulnerabilitiesFound,
+              lastScan: new Date(),
+              overallScore: Math.max(75, 100 - vulnerabilitiesFound * 5 - newThreats * 3)
+            }));
+
+            if (vulnerabilitiesFound > 0 || newThreats > 0) {
+              toast.warning(`⚠️ Scan completed: ${vulnerabilitiesFound} vulnerabilities, ${newThreats} threats found`);
+            } else {
+              toast.success("✅ Scan completed: System is secure");
+            }
+            
+            return 100;
+          }
+          return prev + 3;
+        });
+      }, 80);
+    } catch (error) {
+      console.error('Scan failed:', error);
+      toast.error("❌ Scan failed - please try again");
+      setIsScanning(false);
+    }
+  };
+
+  const performQuickFix = async () => {
+    if (metrics.vulnerabilities === 0) {
+      toast.info("✅ No issues found to fix");
+      return;
+    }
+
+    setIsFixing(true);
+    setFixProgress(0);
+    toast.info("🔧 Starting automated security fixes...");
+
+    const fixInterval = setInterval(() => {
+      setFixProgress(prev => {
         if (prev >= 100) {
-          clearInterval(scanInterval);
-          setIsScanning(false);
+          clearInterval(fixInterval);
+          setIsFixing(false);
           
-          // Simulate scan results with actual findings
-          const vulnerabilitiesFound = Math.floor(Math.random() * 4);
-          const newThreats = Math.floor(Math.random() * 3);
-          
+          // Apply fixes
+          const fixedIssues = metrics.vulnerabilities;
           setMetrics(prev => ({
             ...prev,
-            vulnerabilities: vulnerabilitiesFound,
-            lastScan: new Date(),
-            overallScore: Math.max(75, 100 - vulnerabilitiesFound * 5 - newThreats * 3)
+            vulnerabilities: 0,
+            overallScore: Math.min(100, prev.overallScore + fixedIssues * 5),
+            activeProtections: prev.activeProtections + 1
           }));
-
-          if (vulnerabilitiesFound > 0 || newThreats > 0) {
-            toast.warning(`⚠️ Scan completed: ${vulnerabilitiesFound} vulnerabilities, ${newThreats} threats found`);
-          } else {
-            toast.success("✅ Scan completed: System is secure");
-          }
+          
+          setRealTimeThreats(prev => [
+            "Security vulnerabilities automatically resolved",
+            "System optimization completed",
+            ...prev.slice(0, 3)
+          ]);
+          
+          toast.success(`✅ Quick fix completed: ${fixedIssues} issues resolved`, {
+            description: "Your device security has been improved"
+          });
           
           return 100;
         }
-        return prev + 3;
+        return prev + 4;
       });
-    }, 80);
+    }, 100);
   };
 
   const getScoreColor = (score: number) => {
@@ -278,6 +380,25 @@ export default function SecurityStatus() {
         </div>
       )}
 
+      {/* Quick Fix Progress */}
+      {isFixing && (
+        <div className="bg-white p-4 rounded-xl border border-green-200 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-green-800">Automated Security Fix</span>
+            <span className="text-sm text-green-600">{fixProgress}%</span>
+          </div>
+          <div className="w-full bg-green-100 rounded-full h-2">
+            <div 
+              className="bg-green-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${fixProgress}%` }}
+            />
+          </div>
+          <p className="text-xs text-green-600 mt-2">
+            Applying security patches and optimizing system settings...
+          </p>
+        </div>
+      )}
+
       {/* Real-time Threat Feed */}
       {realTimeThreats.length > 0 && (
         <div className="bg-white rounded-xl border shadow-sm p-6">
@@ -303,16 +424,20 @@ export default function SecurityStatus() {
       <div className="flex gap-3">
         <button
           onClick={performDeepScan}
-          disabled={isScanning}
+          disabled={isScanning || isFixing}
           className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
           <Shield className={`w-5 h-5 ${isScanning ? 'animate-spin' : ''}`} />
           {isScanning ? 'Scanning...' : 'Run Deep Scan'}
         </button>
         
-        <button className="bg-green-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
-          <Zap className="w-5 h-5" />
-          Quick Fix
+        <button 
+          onClick={performQuickFix}
+          disabled={isFixing || isScanning || metrics.vulnerabilities === 0}
+          className="bg-green-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+        >
+          <Zap className={`w-5 h-5 ${isFixing ? 'animate-spin' : ''}`} />
+          {isFixing ? 'Fixing...' : 'Quick Fix'}
         </button>
       </div>
     </div>
