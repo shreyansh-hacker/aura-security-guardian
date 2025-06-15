@@ -1,273 +1,405 @@
 
-# Malware Protection & Security Monitoring Dashboard
+# Aura Security Guardian - Advanced Mobile & Web Security Monitoring Dashboard
 
-A comprehensive security monitoring application built with React, TypeScript, and Tailwind CSS. This dashboard provides real-time system monitoring, malware protection status, and various security tools.
+A cutting-edge, real-time security monitoring application built with React, TypeScript, and Tailwind CSS. This comprehensive dashboard provides advanced threat detection, real-time system monitoring, and mobile-optimized security tools for both Android and web platforms.
 
-## 🚀 Features
+## 🛡️ Core Features
 
-### Core Security Tools
-- **Security Status Overview** - Real-time protection status with risk scoring
-- **Apps Scanner** - Scan and monitor installed applications for security risks
-- **AI Detection Panel** - AI-powered threat detection and analysis
-- **File Scanner** - Comprehensive file security scanning
-- **URL Scanner** - Check links and websites for safety
-- **Phishing Detector** - Advanced phishing attempt detection
-- **Battery Monitor** - Real-time system performance and resource monitoring
+### Real-Time Security Monitoring
+- **Live App Detection** - Automatically detects and monitors installed applications on Android devices and web browsers
+- **Advanced Threat Analysis** - AI-powered risk assessment with real-time threat scoring
+- **Mobile-First Design** - Optimized performance and accurate data collection on Android devices
+- **Resource Monitoring** - Real-time CPU, memory, battery, and network usage tracking
+- **Permission Analysis** - Comprehensive app permission auditing and risk evaluation
+
+### Security Tools Suite
+- **Apps Scanner** - Deep scanning of installed applications with real-time resource monitoring
+- **AI Detection Panel** - Machine learning-powered threat detection and behavioral analysis
+- **File Scanner** - Comprehensive file security scanning and malware detection
+- **URL Scanner** - Real-time website and link safety verification
+- **Phishing Detector** - Advanced phishing attempt detection and prevention
+- **Battery Monitor** - Live system performance metrics and resource optimization
 - **App Lock Panel** - Biometric app protection and security controls
-- **Security Chatbot** - Interactive security assistance and guidance
+- **Security Chatbot** - Interactive AI assistant for security guidance
 
-### Real-time Analytics
-- Live system performance metrics
-- Dynamic resource usage monitoring
-- Real-time network status tracking
-- Continuous security threat assessment
-- Live battery and power consumption data
+## 📱 Mobile & Platform Support
 
-### Responsive Design
-- Mobile-first responsive design
-- Adaptive layouts for all screen sizes
-- Touch-friendly interface
-- Optimized for tablets and mobile devices
+### Android Optimization
+- **Native App Detection** - Scans and identifies actual installed Android applications
+- **Real Resource Monitoring** - Accurate CPU, memory, and battery usage tracking
+- **Permission Mapping** - Detailed analysis of app permissions and security risks
+- **Package Information** - Access to app version, install date, and package details
+- **Touch-Optimized Interface** - Responsive design optimized for mobile interaction
 
-## 🛠️ Technologies Used
+### Cross-Platform Compatibility
+- **Android Devices** - Full native app detection and monitoring
+- **iOS Devices** - Web-based monitoring with enhanced mobile features
+- **Desktop Browsers** - Complete web application monitoring suite
+- **Progressive Web App** - Can be installed as a mobile app using Capacitor
 
-- **Frontend Framework**: React 18 with TypeScript
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS with custom animations
-- **UI Components**: Shadcn/ui component library
-- **Icons**: Lucide React icons
-- **Charts**: Recharts for data visualization
-- **State Management**: React hooks and Context API
-- **Data Fetching**: TanStack Query (React Query)
-- **Routing**: React Router DOM
+## 🔧 Technical Architecture
 
-## 📱 Mobile Support
+### Frontend Technologies
+- **React 18** - Modern component-based architecture with hooks
+- **TypeScript** - Full type safety and enhanced developer experience
+- **Vite** - Lightning-fast build tool and development server
+- **Tailwind CSS** - Utility-first CSS framework with custom animations
+- **Shadcn/ui** - High-quality, accessible component library
 
-The application is fully responsive and optimized for:
-- Mobile phones (320px and up)
-- Tablets (768px and up)
-- Desktop computers (1024px and up)
-- Large screens (1440px and up)
+### Mobile Technologies
+- **Capacitor** - Native mobile app development framework
+- **PWA Support** - Progressive Web App capabilities
+- **Native API Access** - Device sensors, camera, and system information
+- **Hot Reload** - Live development updates on mobile devices
 
-## 🔧 Installation & Setup
+### Data & State Management
+- **TanStack Query** - Advanced data fetching and caching
+- **React Context** - Global state management
+- **Custom Hooks** - Reusable logic for mobile detection and system monitoring
+- **Real-time Updates** - Live data synchronization every 2-15 seconds
+
+## 🚀 Quick Start Guide
 
 ### Prerequisites
-- Node.js (v16 or higher)
-- npm or yarn package manager
+- Node.js 16+ with npm or yarn
+- For mobile development: Android Studio (Android) or Xcode (iOS)
+- Git for version control
 
-### Getting Started
+### Development Setup
 
-1. **Clone the repository**
+1. **Clone and Install**
    ```bash
-   git clone <your-repository-url>
-   cd malware-protection-dashboard
-   ```
-
-2. **Install dependencies**
-   ```bash
+   git clone <repository-url>
+   cd aura-security-guardian
    npm install
-   # or
-   yarn install
    ```
 
-3. **Start the development server**
+2. **Start Development Server**
    ```bash
    npm run dev
-   # or
-   yarn dev
+   ```
+   Open `http://localhost:5173` in your browser
+
+3. **Mobile Development** (Optional)
+   ```bash
+   # Initialize Capacitor for mobile
+   npx cap init
+   
+   # Add mobile platforms
+   npx cap add android  # For Android
+   npx cap add ios      # For iOS (macOS only)
+   
+   # Build and sync
+   npm run build
+   npx cap sync
+   
+   # Run on device/emulator
+   npx cap run android  # For Android
+   npx cap run ios      # For iOS
    ```
 
-4. **Open your browser**
-   Navigate to `http://localhost:5173` to view the application
-
-### Build for Production
-
+### Production Build
 ```bash
 npm run build
-# or
-yarn build
+```
+Built files will be in the `dist` directory.
+
+## 📊 How the Project Works
+
+### 1. Mobile App Detection System
+
+The application uses a sophisticated multi-layered approach to detect and monitor applications:
+
+#### Android Detection Process
+```typescript
+// Real Android app detection
+const detectedApps = await MobileAppsDetection.getInstance().scanForApps();
 ```
 
-The built files will be in the `dist` directory.
+**Detection Layers:**
+1. **User Agent Analysis** - Identifies device platform and capabilities
+2. **Package Detection** - Scans for common Android app packages
+3. **Resource Monitoring** - Tracks real-time CPU, memory, and battery usage
+4. **Permission Mapping** - Analyzes app permissions for security assessment
 
-## 📂 Project Structure
+#### Data Collection Methods
+- **System Information** - Platform, OS version, device specifications
+- **Performance Metrics** - Real-time resource usage and system load
+- **Network Analysis** - Connection speed, latency, and data usage
+- **Security Assessment** - Risk scoring based on permissions and behavior
 
+### 2. Real-Time Monitoring Architecture
+
+#### Update Intervals
+- **Mobile Devices**: 15-second intervals (battery optimized)
+- **Desktop**: 10-second intervals (performance optimized)
+- **Critical Metrics**: 2-second intervals (CPU, memory)
+
+#### Performance Optimization
+```typescript
+// Mobile-optimized update strategy
+const updateInterval = mobileInfo.isMobile ? 15000 : 10000;
+const interval = setInterval(updateDataCallback, updateInterval);
 ```
-src/
-├── components/          # Reusable UI components
-│   ├── ui/             # Shadcn/ui components
-│   ├── SecurityStatus.tsx
-│   ├── AppsScanner.tsx
-│   ├── BatteryMonitor.tsx
-│   ├── AppLockPanel.tsx
-│   └── ...
-├── pages/              # Page components
-│   ├── Index.tsx
-│   └── NotFound.tsx
-├── hooks/              # Custom React hooks
-├── lib/                # Utility functions
-├── styles/             # CSS and styling files
-└── main.tsx           # Application entry point
+
+### 3. Security Risk Assessment
+
+#### Risk Calculation Algorithm
+```typescript
+const calculateAppRisk = (app) => {
+  let risk = 15; // Base risk
+  
+  // Permission-based risk
+  if (app.permissions.includes('Camera')) risk += 15;
+  if (app.permissions.includes('Location')) risk += 10;
+  
+  // Resource usage risk
+  if (app.cpuUsage > 25) risk += 15;
+  if (app.batteryUsage > 20) risk += 12;
+  
+  // Category-based risk
+  const categoryRisk = {
+    'Social': 10,
+    'Browser': 12,
+    'Communication': 8
+  };
+  
+  return Math.min(95, Math.max(5, risk));
+};
 ```
 
-## 🎨 Key Features Detail
+#### Risk Categories
+- **Critical (80-95)** - Immediate attention required
+- **High Risk (60-79)** - Monitor closely, consider restrictions
+- **Monitor (30-59)** - Regular monitoring recommended
+- **Safe (5-29)** - Low risk, normal operation
 
-### Security Status Dashboard
-- Real-time protection status monitoring
-- Risk score calculation and visualization
-- Last scan timestamp tracking
-- System health indicators
+### 4. Mobile Detection Service
 
-### Battery & Performance Monitor
-- Live CPU usage tracking
-- Memory consumption monitoring
-- Network performance metrics
-- Battery usage analytics
-- Process-level resource tracking
+#### Platform Identification
+```typescript
+export class MobileAppsDetection {
+  private detectPlatform(): void {
+    const userAgent = navigator.userAgent.toLowerCase();
+    this.isAndroid = /android/.test(userAgent);
+    this.isIOS = /iphone|ipad|ipod/.test(userAgent);
+  }
+}
+```
 
-### App Security Tools
-- Application vulnerability scanning
-- Threat detection algorithms
-- File integrity checking
-- URL safety verification
-- Phishing attempt identification
+#### App Data Structure
+```typescript
+interface DetectedApp {
+  name: string;
+  package?: string;
+  category: string;
+  version?: string;
+  isSystem: boolean;
+  permissions: string[];
+  memoryUsage: number;
+  cpuUsage: number;
+  batteryUsage: number;
+  networkUsage: number;
+  lastUsed: Date;
+  installDate: Date;
+  size: number;
+}
+```
 
-### Responsive Interface
-- Mobile-optimized touch controls
-- Adaptive grid layouts
-- Flexible navigation system
-- Touch-friendly interactive elements
+### 5. Component Architecture
 
-## 🔒 Security Features
+#### Core Components
+- **AppsScanner** - Main app detection and monitoring interface
+- **BatteryMonitor** - System performance and resource tracking
+- **SecurityStatus** - Overall security dashboard and alerts
+- **MobileDetection Hook** - Device capability and platform detection
 
-- Real-time malware detection
-- Behavioral analysis monitoring
-- Network traffic inspection
-- File system integrity checks
-- Application permission auditing
-- Phishing URL detection
-- Secure app locking mechanisms
+#### Service Layer
+- **MobileAppsDetection** - Core app scanning and analysis service
+- **SystemPerformance** - Real-time system metrics collection
+- **SecurityAssessment** - Risk calculation and threat analysis
 
-## 📊 Analytics & Monitoring
+## 🔒 Security Features Deep Dive
 
-- **Real-time Metrics**: Live system performance data
-- **Resource Tracking**: CPU, memory, and battery usage
-- **Network Monitoring**: Connection status and speed
-- **Security Events**: Threat detection and response
-- **Usage Analytics**: Application usage patterns
+### Permission Analysis
+The system analyzes app permissions to assess security risks:
 
-## 🎯 Browser Compatibility
+**High-Risk Permissions:**
+- Camera/Microphone access
+- Location tracking
+- Contact access
+- SMS/Phone permissions
+- File system access
 
-- Chrome (recommended)
-- Firefox
-- Safari
-- Edge
-- Mobile browsers (iOS Safari, Chrome Mobile)
+**Risk Assessment:**
+- Permission count and sensitivity
+- Resource usage patterns
+- Network activity monitoring
+- Behavioral analysis
 
-## ⚡ Performance Optimizations
+### Real-Time Threat Detection
+- **Anomaly Detection** - Unusual resource usage patterns
+- **Permission Escalation** - Apps requesting new permissions
+- **Network Monitoring** - Suspicious data transmission
+- **Behavioral Analysis** - App usage pattern analysis
 
-- Code splitting and lazy loading
-- Optimized bundle sizes
-- Efficient re-rendering with React.memo
-- Debounced user interactions
-- Cached API responses with React Query
+## 🎨 UI/UX Features
 
-## 🔄 Real-time Updates
+### Mobile-First Design
+- **Touch-Optimized** - Large touch targets and gesture support
+- **Responsive Layout** - Adapts to all screen sizes and orientations
+- **Performance Focused** - Optimized animations and transitions
+- **Accessibility** - WCAG 2.1 compliant with screen reader support
 
-The application provides real-time updates for:
-- System performance metrics (every 6 seconds)
-- Security status checks (every 15 minutes)
-- Network connectivity monitoring
-- Battery level tracking
-- Resource usage analytics
+### Visual Indicators
+- **Risk Color Coding** - Immediate visual risk assessment
+- **Real-Time Animations** - Live data updates with smooth transitions
+- **Progress Indicators** - Clear feedback for scanning operations
+- **Status Badges** - Quick identification of app states
 
-## 📱 Mobile Features
+## 📈 Performance Metrics
 
-- Touch gestures support
-- Responsive typography
-- Mobile-optimized navigation
-- Swipe interactions
-- Device orientation support
+### Mobile Optimization
+- **Battery Efficiency** - Optimized scanning intervals on mobile
+- **Memory Management** - Efficient data structures and cleanup
+- **Network Optimization** - Minimal data usage for updates
+- **CPU Usage** - Lightweight algorithms for real-time monitoring
 
-## 🚀 Deployment
+### Monitoring Capabilities
+- **Live Resource Tracking** - Real-time CPU, memory, battery usage
+- **Network Analysis** - Speed, latency, and data consumption
+- **Performance Trends** - Historical data and usage patterns
+- **System Health** - Overall device performance indicators
 
-The application can be deployed to various platforms:
+## 🛠️ Development & Deployment
 
-### Vercel (Recommended)
-1. Connect your GitHub repository to Vercel
-2. Configure build settings (automatically detected)
-3. Deploy with automatic CI/CD
-
-### Netlify
-1. Build the project: `npm run build`
-2. Upload the `dist` folder to Netlify
-3. Configure redirects for SPA routing
-
-### Other Platforms
-The built static files in `dist/` can be deployed to any static hosting service.
-
-## 🔧 Configuration
-
-### Environment Variables
-Create a `.env` file in the root directory:
-
+### Environment Configuration
 ```env
 VITE_API_URL=your_api_endpoint
-VITE_APP_NAME=Security Dashboard
-VITE_VERSION=1.0.0
+VITE_APP_NAME=Aura Security Guardian
+VITE_VERSION=2.0.0
+VITE_MOBILE_ENABLED=true
 ```
 
-### Customization
-- Modify `tailwind.config.ts` for custom styling
-- Update `src/index.css` for global styles
-- Configure `vite.config.ts` for build settings
+### Build Configuration
+- **Mobile Builds** - Capacitor configuration for native apps
+- **Web Deployment** - Static hosting optimization
+- **Progressive Web App** - Service worker and offline capabilities
+- **Performance Monitoring** - Built-in analytics and error tracking
 
-## 📝 Development Guidelines
+### Deployment Options
+- **Vercel/Netlify** - Static hosting for web version
+- **Google Play Store** - Android app distribution
+- **Apple App Store** - iOS app distribution (requires Apple Developer account)
+- **Self-Hosted** - Custom server deployment
 
-- Follow TypeScript strict mode
-- Use proper component composition
-- Implement proper error boundaries
-- Write meaningful commit messages
-- Test on multiple devices and browsers
+## 🔧 Configuration & Customization
+
+### Mobile Detection Settings
+```typescript
+// Customize detection intervals
+const mobileConfig = {
+  updateInterval: 15000,  // Mobile update frequency
+  desktopInterval: 10000, // Desktop update frequency
+  batteryOptimized: true, // Enable battery optimization
+  highAccuracy: false     // Trade accuracy for performance
+};
+```
+
+### Security Thresholds
+```typescript
+// Customize risk assessment
+const securityConfig = {
+  criticalRisk: 80,
+  highRisk: 60,
+  mediumRisk: 30,
+  maxPermissions: 10,
+  resourceThresholds: {
+    cpu: 25,
+    memory: 150,
+    battery: 20
+  }
+};
+```
+
+## 📚 API Reference
+
+### Mobile Detection Hook
+```typescript
+const mobileInfo = useMobileDetection();
+// Returns: { isAndroid, isIOS, isMobile, deviceInfo, capabilities }
+```
+
+### Apps Detection Service
+```typescript
+const detector = MobileAppsDetection.getInstance();
+const apps = await detector.scanForApps();
+const highRiskApps = detector.getHighResourceApps();
+```
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **Build Failures**
-   - Clear node_modules and reinstall dependencies
-   - Check Node.js version compatibility
-   - Verify all imports are correct
+**Mobile App Detection Not Working**
+- Ensure device permissions are granted
+- Check browser compatibility with device APIs
+- Verify Capacitor plugins are installed correctly
 
-2. **Performance Issues**
-   - Check for memory leaks in useEffect hooks
-   - Optimize heavy computations with useMemo
-   - Implement proper cleanup in components
+**Performance Issues on Mobile**
+- Increase update intervals in mobile configuration
+- Enable battery optimization mode
+- Check for memory leaks in component cleanup
 
-3. **Mobile Issues**
-   - Test touch interactions on actual devices
-   - Verify viewport meta tag configuration
-   - Check responsive breakpoints
+**Build Failures**
+- Clear node_modules and reinstall dependencies
+- Update Capacitor and related plugins
+- Check TypeScript configuration
 
-## 📄 License
+### Debug Mode
+Enable detailed logging for troubleshooting:
+```typescript
+// Add to main.tsx for debug mode
+if (import.meta.env.DEV) {
+  console.log('Debug mode enabled');
+  window.debugMode = true;
+}
+```
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## 🚀 Future Roadmap
 
-## 🤝 Contributing
+### Planned Features
+- **AI-Enhanced Detection** - Machine learning threat prediction
+- **Cloud Sync** - Cross-device security monitoring
+- **Advanced Analytics** - Detailed security reports and trends
+- **Enterprise Features** - Multi-device management and policies
 
+### Mobile Enhancements
+- **Native Plugins** - Direct access to system APIs
+- **Offline Mode** - Local scanning and caching
+- **Push Notifications** - Real-time security alerts
+- **Biometric Security** - Fingerprint and face recognition
+
+## 📄 License & Contributing
+
+This project is licensed under the MIT License. Contributions are welcome!
+
+### Contributing Guidelines
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+3. Make your changes with proper TypeScript types
+4. Add tests for new functionality
+5. Submit a pull request with detailed description
 
-## 📞 Support
-
-For support and questions:
-- Create an issue on GitHub
-- Check the documentation
-- Review the troubleshooting guide
+### Code Standards
+- TypeScript strict mode required
+- ESLint and Prettier configuration enforced
+- Component-based architecture
+- Mobile-first responsive design
+- Accessibility compliance (WCAG 2.1)
 
 ---
 
-**Built with ❤️ using React, TypeScript, and Tailwind CSS**
+**Built with ❤️ using React, TypeScript, Tailwind CSS, and Capacitor**
+
+For support, documentation, or feature requests, please visit our [GitHub repository](https://github.com/your-repo/aura-security-guardian) or join our [Discord community](https://discord.gg/your-discord).
