@@ -1,125 +1,166 @@
+
+import { Shield, Smartphone, Scan, AlertTriangle, FileText, Globe, ShieldAlert, Battery, Brain, Lock, MessageCircle, Home } from "lucide-react";
 import {
-  Home,
-  Shield,
-  Monitor,
-  Smartphone,
-  AlertTriangle,
-  FileCheck,
-  Globe,
-  Battery,
-  Brain,
-  Lock,
-  MessageSquare,
-  ShieldAlert,
-  Mail,
-} from "lucide-react";
-import { NavLink } from "react-router-dom";
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarHeader,
+  SidebarFooter,
+} from "@/components/ui/sidebar";
+import { useMobileDetection } from "../hooks/useMobileDetection";
+import { useNavigate, useLocation } from "react-router-dom";
 
-export default function AppSidebar() {
-  return (
-    <div className="flex flex-col h-full bg-gray-50 border-r py-4">
-      <div className="px-4 mb-6">
-        <h2 className="text-lg font-semibold text-gray-800">Aura</h2>
-        <p className="text-sm text-gray-500">Your Security Toolkit</p>
-      </div>
-
-      <nav className="flex-1 space-y-1">
-        {items.map((item) => (
-          <NavItem key={item.url} item={item} />
-        ))}
-      </nav>
-
-      <div className="mt-auto px-4 py-3">
-        <p className="text-xs text-gray-400">
-          © {new Date().getFullYear()} Aura. All rights reserved.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function NavItem({ item }: { item: { title: string; url: string; icon: any } }) {
-  return (
-    <NavLink
-      to={item.url}
-      className={({ isActive }) =>
-        `flex items-center px-4 py-2 rounded-lg transition-colors
-        ${isActive
-            ? "bg-blue-100 text-blue-700 font-medium"
-            : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
-        }`
-      }
-    >
-      <item.icon className="w-4 h-4 mr-2" />
-      {item.title}
-    </NavLink>
-  );
-}
-
-const items = [
+const securityFeatures = [
   {
     title: "Dashboard",
-    url: "/",
     icon: Home,
+    path: "/",
   },
   {
     title: "Security Status",
-    url: "/security-status",
     icon: Shield,
+    path: "/security-status",
   },
   {
     title: "System Monitor",
-    url: "/system-monitor",
-    icon: Monitor,
+    icon: Smartphone,
+    path: "/system-monitor",
   },
   {
     title: "Apps Scanner",
-    url: "/apps-scanner",
-    icon: Smartphone,
+    icon: Scan,
+    path: "/apps-scanner",
   },
   {
     title: "Alert Panel",
-    url: "/alert-panel",
     icon: AlertTriangle,
+    path: "/alert-panel",
   },
   {
     title: "File Scanner",
-    url: "/file-scanner",
-    icon: FileCheck,
+    icon: FileText,
+    path: "/file-scanner",
   },
+];
+
+const additionalFeatures = [
   {
     title: "URL Scanner",
-    url: "/url-scanner",
     icon: Globe,
-  },
-  {
-    title: "Email Security",
-    url: "/email-security",
-    icon: Mail,
+    path: "/url-scanner",
   },
   {
     title: "Phishing Detector",
-    url: "/phishing-detector",
     icon: ShieldAlert,
+    path: "/phishing-detector",
   },
   {
     title: "Battery Monitor",
-    url: "/battery-monitor",
     icon: Battery,
+    path: "/battery-monitor",
   },
   {
     title: "AI Detection",
-    url: "/ai-detection",
     icon: Brain,
+    path: "/ai-detection",
   },
   {
     title: "App Lock",
-    url: "/app-lock",
     icon: Lock,
+    path: "/app-lock",
   },
   {
     title: "Security Chat",
-    url: "/security-chat",
-    icon: MessageSquare,
+    icon: MessageCircle,
+    path: "/security-chat",
   },
 ];
+
+export function AppSidebar() {
+  const mobileInfo = useMobileDetection();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+  };
+
+  return (
+    <Sidebar>
+      <SidebarHeader className="p-4">
+        <div className="flex items-center gap-3">
+          {mobileInfo.isMobile ? (
+            <Smartphone className="w-8 h-8 text-blue-600" />
+          ) : (
+            <Shield className="w-8 h-8 text-blue-600" />
+          )}
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">
+              {mobileInfo.isMobile ? 'Mobile Security' : 'AI Security'}
+            </h2>
+            <p className="text-xs text-gray-600">
+              {mobileInfo.isMobile ? 'Guardian' : 'Protection'}
+            </p>
+          </div>
+        </div>
+      </SidebarHeader>
+
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Core Security</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {securityFeatures.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton 
+                    onClick={() => handleNavigation(item.path)}
+                    isActive={location.pathname === item.path}
+                  >
+                    <item.icon className="w-4 h-4" />
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Advanced Features</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {additionalFeatures.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton 
+                    onClick={() => handleNavigation(item.path)}
+                    isActive={location.pathname === item.path}
+                  >
+                    <item.icon className="w-4 h-4" />
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter className="p-4">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-3 text-center">
+          <div className="flex items-center justify-center gap-2 mb-1">
+            <Shield className="w-4 h-4" />
+            <span className="text-sm font-semibold">Protected</span>
+          </div>
+          <div className="text-xs text-blue-100">
+            Real-time security active
+          </div>
+        </div>
+      </SidebarFooter>
+    </Sidebar>
+  );
+}
