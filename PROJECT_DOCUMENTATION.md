@@ -1,5 +1,5 @@
 
-# Aura Security Guardian - Complete Project Documentation
+# AI Malware Guard – Complete Project Documentation
 
 ## 🏗️ Architecture Overview
 
@@ -428,8 +428,8 @@ describe('Security Dashboard', () => {
 ### Environment Configuration
 ```env
 # Production environment
-VITE_API_URL=https://api.aurasecurity.com
-VITE_APP_NAME=Aura Security Guardian
+VITE_API_URL=https://api.aimgdetection.com
+VITE_APP_NAME=AI Malware Guard
 VITE_VERSION=2.0.0
 VITE_ENVIRONMENT=production
 VITE_ANALYTICS_ID=your_analytics_id
@@ -548,4 +548,4 @@ const analytics = {
 
 ---
 
-This documentation provides a comprehensive overview of the Aura Security Guardian project, covering all aspects from architecture to deployment and maintenance.
+This documentation provides a comprehensive overview of the AI Malware Guard project, covering all aspects from architecture to deployment and maintenance.

@@ -1,7 +1,7 @@
 
 export default {
   appId: "app.lovable.a2bfc00872c74db381329fa627ff0763",
-  appName: "aura-security-guardian",
+  appName: "ai-malware-guard",
   webDir: "dist",
   bundledWebRuntime: false,
   server: {

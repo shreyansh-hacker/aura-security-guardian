@@ -1,5 +1,5 @@
 
-# Aura Security Guardian - Advanced Mobile & Web Security Monitoring Dashboard
+# AI Malware Guard – AI-Powered Mobile Threat Detection App
 
 A cutting-edge, real-time security monitoring application built with React, TypeScript, and Tailwind CSS. This comprehensive dashboard provides advanced threat detection, real-time system monitoring, and mobile-optimized security tools for both Android and web platforms.
 
@@ -70,7 +70,7 @@ A cutting-edge, real-time security monitoring application built with React, Type
 1. **Clone and Install**
    ```bash
    git clone <repository-url>
-   cd aura-security-guardian
+   cd ai-malware-guard
    npm install
    ```
 
@@ -276,7 +276,7 @@ The system analyzes app permissions to assess security risks:
 ### Environment Configuration
 ```env
 VITE_API_URL=your_api_endpoint
-VITE_APP_NAME=Aura Security Guardian
+VITE_APP_NAME=AI Malware Guard
 VITE_VERSION=2.0.0
 VITE_MOBILE_ENABLED=true
 ```
@@ -402,4 +402,4 @@ This project is licensed under the MIT License. Contributions are welcome!
 
 **Built with ❤️ using React, TypeScript, Tailwind CSS, and Capacitor**
 
-For support, documentation, or feature requests, please visit our [GitHub repository](https://github.com/your-repo/aura-security-guardian) or join our [Discord community](https://discord.gg/your-discord).
+For support, documentation, or feature requests, please visit our [GitHub repository](https://github.com/your-repo/ai-malware-guard) or join our [Discord community](https://discord.gg/your-discord).
