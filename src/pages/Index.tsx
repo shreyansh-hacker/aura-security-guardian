@@ -1,80 +1,106 @@
 
-import { Shield, Search, FileSearch, FileX, X, ShieldAlert } from "lucide-react";
-import SecurityStatus from "@/components/SecurityStatus";
-import AppsScanner from "@/components/AppsScanner";
-import AiDetectionPanel from "@/components/AiDetectionPanel";
-import AlertPanel from "@/components/AlertPanel";
-import UrlScanner from "@/components/UrlScanner";
-import FileScanner from "@/components/FileScanner";
-import PhishingDetector from "@/components/PhishingDetector";
-import BatteryMonitor from "@/components/BatteryMonitor";
-import AppLockPanel from "@/components/AppLockPanel";
-import SecurityChatbot from "@/components/SecurityChatbot";
-import { useState } from "react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import SecurityStatus from "../components/SecurityStatus";
+import AppsScanner from "../components/AppsScanner";
+import MobileSystemMonitor from "../components/MobileSystemMonitor";
+import AlertPanel from "../components/AlertPanel";
+import FileScanner from "../components/FileScanner";
+import UrlScanner from "../components/UrlScanner";
+import PhishingDetector from "../components/PhishingDetector";
+import BatteryMonitor from "../components/BatteryMonitor";
+import AiDetectionPanel from "../components/AiDetectionPanel";
+import AppLockPanel from "../components/AppLockPanel";
+import SecurityChatbot from "../components/SecurityChatbot";
+import { useMobileDetection } from "../hooks/useMobileDetection";
+import { Shield, Smartphone, Globe } from "lucide-react";
 
-const TABS = [
-  { label: "Scan Apps", icon: <Search className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />, tip: "Scan installed apps for risks" },
-  { label: "AI Detection", icon: <Shield className="w-4 h-4 md:w-5 md:h-5 text-green-600" />, tip: "Detect threats with AI" },
-  { label: "File Scanner", icon: <FileSearch className="w-4 h-4 md:w-5 md:h-5 text-indigo-600" />, tip: "Scan files for malware" },
-  { label: "URL Scanner", icon: <Search className="w-4 h-4 md:w-5 md:h-5 text-cyan-600" />, tip: "Check links for safety" },
-  { label: "Phishing Detector", icon: <ShieldAlert className="w-4 h-4 md:w-5 md:h-5 text-orange-500" />, tip: "Spot phishing attempts" },
-  { label: "Battery Monitor", icon: <FileX className="w-4 h-4 md:w-5 md:h-5 text-pink-500" />, tip: "View app performance" },
-  { label: "App Lock", icon: <X className="w-4 h-4 md:w-5 md:h-5 text-gray-600" />, tip: "Lock sensitive apps" },
-  { label: "Security Chatbot", icon: <Shield className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />, tip: "Get expert advice" },
-];
-
-export default function Index() {
-  const [tab, setTab] = useState(0);
+const Index = () => {
+  const mobileInfo = useMobileDetection();
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-tr from-blue-50 via-gray-50 to-blue-100 animate-fade-in">
-      <div className="w-full px-2 sm:px-4 md:px-6 lg:px-10 py-4 md:py-10">
-        <SecurityStatus />
-        <div className="flex flex-col xl:flex-row mt-6 md:mt-10 gap-4 md:gap-6">
-          <div className="w-full xl:w-2/3 space-y-4 md:space-y-6">
-            {/* Tab Navigation - Responsive */}
-            <div className="flex items-center gap-1 md:gap-2 lg:gap-3 flex-wrap">
-              {TABS.map((t, i) => (
-                <Tooltip key={i}>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => setTab(i)}
-                      className={`flex items-center gap-1 md:gap-2 px-2 md:px-3 py-2 rounded-lg md:rounded-2xl border shadow-sm bg-white hover:bg-blue-50 transition-all duration-200 text-xs md:text-sm lg:text-base
-                        ${tab === i ? "bg-gradient-to-tr from-blue-200 via-blue-100 to-white border-blue-500 text-blue-800 font-bold scale-105" : "text-gray-700 border-gray-200"}
-                      `}
-                      aria-label={t.tip}
-                    >
-                      {t.icon}
-                      <span className="hidden sm:inline">{t.label}</span>
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>{t.tip}</TooltipContent>
-                </Tooltip>
-              ))}
-            </div>
-            
-            {/* Main Content Panel - Responsive */}
-            <div className="min-h-[400px] md:min-h-[500px] rounded-2xl md:rounded-3xl bg-white shadow-xl p-4 md:p-6 lg:p-8 animate-fade-in border border-blue-100 transition-all duration-200">
-              <div className="animate-fade-in">
-                {tab === 0 && <AppsScanner />}
-                {tab === 1 && <AiDetectionPanel />}
-                {tab === 2 && <FileScanner />}
-                {tab === 3 && <UrlScanner />}
-                {tab === 4 && <PhishingDetector />}
-                {tab === 5 && <BatteryMonitor />}
-                {tab === 6 && <AppLockPanel />}
-                {tab === 7 && <SecurityChatbot />}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Mobile-optimized header */}
+      <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {mobileInfo.isMobile ? (
+                <Smartphone className="w-8 h-8 text-blue-600" />
+              ) : (
+                <Shield className="w-8 h-8 text-blue-600" />
+              )}
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+                  {mobileInfo.isMobile ? 'Mobile Security Guardian' : 'AI Malware Detection'}
+                </h1>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span>Real-time protection active</span>
+                  {mobileInfo.isMobile && (
+                    <>
+                      <span>•</span>
+                      <span>{mobileInfo.isAndroid ? 'Android' : mobileInfo.isIOS ? 'iOS' : 'Mobile'} optimized</span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-          
-          {/* Alert Panel - Responsive */}
-          <div className="w-full xl:w-1/3 min-w-0 xl:min-w-[320px]">
-            <AlertPanel />
+            <div className="flex items-center gap-2 text-sm">
+              <Globe className="w-4 h-4 text-blue-500" />
+              <span className="hidden sm:inline text-gray-600">
+                {navigator.onLine ? 'Online' : 'Offline'}
+              </span>
+            </div>
           </div>
         </div>
       </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 space-y-6 md:space-y-8">
+        {/* Security Status - Always first */}
+        <SecurityStatus />
+
+        {/* Mobile System Monitor - Only on mobile */}
+        {mobileInfo.isMobile && <MobileSystemMonitor />}
+
+        {/* Main Grid Layout - Responsive */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
+          {/* Left Column - Primary Security Features */}
+          <div className="xl:col-span-2 space-y-6">
+            <AppsScanner />
+            <AlertPanel />
+            <FileScanner />
+          </div>
+
+          {/* Right Column - Secondary Features */}
+          <div className="space-y-6">
+            <UrlScanner />
+            <PhishingDetector />
+            {mobileInfo.isMobile && <BatteryMonitor />}
+            <AiDetectionPanel />
+            <AppLockPanel />
+          </div>
+        </div>
+
+        {/* Security Chatbot - Mobile optimized positioning */}
+        <SecurityChatbot />
+
+        {/* Mobile-specific footer */}
+        {mobileInfo.isMobile && (
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl p-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Smartphone className="w-5 h-5" />
+              <span className="font-semibold">Mobile Security Active</span>
+            </div>
+            <div className="text-sm text-blue-100">
+              Your {mobileInfo.isAndroid ? 'Android' : mobileInfo.isIOS ? 'iOS' : 'mobile'} device is protected with real-time monitoring
+            </div>
+            <div className="text-xs text-blue-200 mt-1">
+              Battery optimized • Privacy focused • Always secure
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+};
+
+export default Index;
