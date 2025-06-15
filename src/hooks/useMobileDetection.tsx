@@ -25,27 +25,35 @@ interface MobileSystemInfo {
 }
 
 export const useMobileDetection = (): MobileSystemInfo => {
-  const [systemInfo, setSystemInfo] = useState<MobileSystemInfo>({
-    isAndroid: false,
-    isIOS: false,
-    isMobile: false,
-    deviceInfo: {
-      userAgent: '',
-      platform: '',
-      screenWidth: 0,
-      screenHeight: 0,
-      pixelRatio: 1,
-      touchPoints: 0,
-      orientation: 'portrait'
-    },
-    capabilities: {
-      geolocation: false,
-      camera: false,
-      microphone: false,
-      accelerometer: false,
-      gyroscope: false,
-      vibration: false
-    }
+  const [systemInfo, setSystemInfo] = useState<MobileSystemInfo>(() => {
+    // Initialize with actual values instead of defaults
+    const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent.toLowerCase() : '';
+    const isAndroid = /android/.test(userAgent);
+    const isIOS = /iphone|ipad|ipod/.test(userAgent);
+    const isMobile = isAndroid || isIOS || /mobile/.test(userAgent);
+
+    return {
+      isAndroid,
+      isIOS,
+      isMobile,
+      deviceInfo: {
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+        platform: typeof navigator !== 'undefined' ? navigator.platform : '',
+        screenWidth: typeof screen !== 'undefined' ? screen.width : 0,
+        screenHeight: typeof screen !== 'undefined' ? screen.height : 0,
+        pixelRatio: typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1,
+        touchPoints: typeof navigator !== 'undefined' ? navigator.maxTouchPoints || 0 : 0,
+        orientation: typeof screen !== 'undefined' && screen.orientation ? screen.orientation.type : 'portrait-primary'
+      },
+      capabilities: {
+        geolocation: typeof navigator !== 'undefined' && 'geolocation' in navigator,
+        camera: typeof navigator !== 'undefined' && 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices,
+        microphone: typeof navigator !== 'undefined' && 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices,
+        accelerometer: typeof window !== 'undefined' && 'DeviceMotionEvent' in window,
+        gyroscope: typeof window !== 'undefined' && 'DeviceOrientationEvent' in window,
+        vibration: typeof navigator !== 'undefined' && 'vibrate' in navigator
+      }
+    };
   });
 
   useEffect(() => {
@@ -85,6 +93,7 @@ export const useMobileDetection = (): MobileSystemInfo => {
       });
     };
 
+    // Run detection immediately and on window load
     detectMobileSystem();
     
     // Listen for orientation changes
@@ -98,7 +107,7 @@ export const useMobileDetection = (): MobileSystemInfo => {
       }));
     };
 
-    if ('orientation' in screen) {
+    if ('orientation' in screen && screen.orientation) {
       screen.orientation.addEventListener('change', handleOrientationChange);
       return () => screen.orientation.removeEventListener('change', handleOrientationChange);
     }
