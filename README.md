@@ -1,4 +1,3 @@
-
 # AI Malware Guard – AI-Powered Mobile Threat Detection App
 
 A cutting-edge, real-time security monitoring application built with React, TypeScript, and Tailwind CSS. This comprehensive dashboard provides advanced threat detection, real-time system monitoring, and mobile-optimized security tools for both Android and web platforms.

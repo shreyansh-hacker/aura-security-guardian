@@ -1,11 +1,11 @@
 
 export default {
-  appId: "app.lovable.a2bfc00872c74db381329fa627ff0763",
+  appId: "com.aimgdetection.app",
   appName: "ai-malware-guard",
   webDir: "dist",
   bundledWebRuntime: false,
   server: {
-    url: "https://a2bfc008-72c7-4db3-8132-9fa627ff0763.lovableproject.com?forceHideBadge=true",
+    url: "http://localhost:5173",
     cleartext: true,
   },
 };
