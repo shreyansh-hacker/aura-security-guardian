@@ -1,4 +1,3 @@
-
 import { Shield, ShieldAlert, Clock, RefreshCw, CheckCircle } from "lucide-react";
 import RiskChart from "./RiskChart";
 import { useState } from "react";
@@ -8,7 +7,7 @@ export default function SecurityStatus() {
   const [lastUpdate, setLastUpdate] = useState(new Date());
   
   // Simulate an overall system score (0-100)
-  const score = 84;
+  const score = 92;
   const level = score > 80 ? "Safe" : score > 50 ? "Warning" : "Danger";
   const color =
     level === "Safe" ? "text-green-600" : level === "Warning" ? "text-yellow-500" : "text-red-600";
