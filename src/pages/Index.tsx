@@ -1,7 +1,7 @@
 
 import { AppSidebar } from "../components/AppSidebar";
 import { useMobileDetection } from "../hooks/useMobileDetection";
-import { Shield, Smartphone, Globe, Scan, AlertTriangle, FileText, ShieldAlert, Battery, Brain, Lock, MessageCircle, Mail } from "lucide-react";
+import { Shield, Smartphone, Globe, Scan, AlertTriangle, FileText, ShieldAlert, Battery, Brain, Lock, MessageCircle } from "lucide-react";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { useNavigate } from "react-router-dom";
 
@@ -52,13 +52,6 @@ const Index = () => {
       path: "/url-scanner",
       description: "Check website safety",
       color: "from-teal-500 to-teal-600"
-    },
-    {
-      title: "Email Security",
-      icon: Mail,
-      path: "/email-security",
-      description: "Check email safety and breach status",
-      color: "from-cyan-500 to-cyan-600"
     },
     {
       title: "AI Detection",

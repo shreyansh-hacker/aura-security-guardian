@@ -1,5 +1,5 @@
 
-import { Shield, Smartphone, Scan, AlertTriangle, FileText, Globe, ShieldAlert, Battery, Brain, Lock, MessageCircle, Home, Mail } from "lucide-react";
+import { Shield, Smartphone, Scan, AlertTriangle, FileText, Globe, ShieldAlert, Battery, Brain, Lock, MessageCircle, Home } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -53,11 +53,6 @@ const additionalFeatures = [
     title: "URL Scanner",
     icon: Globe,
     path: "/url-scanner",
-  },
-  {
-    title: "Email Security",
-    icon: Mail,
-    path: "/email-security",
   },
   {
     title: "Phishing Detector",
