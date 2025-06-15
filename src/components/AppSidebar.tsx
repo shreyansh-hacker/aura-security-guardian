@@ -13,32 +13,38 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { useMobileDetection } from "../hooks/useMobileDetection";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const securityFeatures = [
   {
+    title: "Dashboard",
+    icon: Home,
+    path: "/",
+  },
+  {
     title: "Security Status",
     icon: Shield,
-    section: "security-status",
+    path: "/security-status",
   },
   {
     title: "System Monitor",
     icon: Smartphone,
-    section: "system-monitor",
+    path: "/system-monitor",
   },
   {
     title: "Apps Scanner",
     icon: Scan,
-    section: "apps-scanner",
+    path: "/apps-scanner",
   },
   {
     title: "Alert Panel",
     icon: AlertTriangle,
-    section: "alert-panel",
+    path: "/alert-panel",
   },
   {
     title: "File Scanner",
     icon: FileText,
-    section: "file-scanner",
+    path: "/file-scanner",
   },
 ];
 
@@ -46,43 +52,42 @@ const additionalFeatures = [
   {
     title: "URL Scanner",
     icon: Globe,
-    section: "url-scanner",
+    path: "/url-scanner",
   },
   {
     title: "Phishing Detector",
     icon: ShieldAlert,
-    section: "phishing-detector",
+    path: "/phishing-detector",
   },
   {
     title: "Battery Monitor",
     icon: Battery,
-    section: "battery-monitor",
+    path: "/battery-monitor",
   },
   {
     title: "AI Detection",
     icon: Brain,
-    section: "ai-detection",
+    path: "/ai-detection",
   },
   {
     title: "App Lock",
     icon: Lock,
-    section: "app-lock",
+    path: "/app-lock",
   },
   {
     title: "Security Chat",
     icon: MessageCircle,
-    section: "security-chat",
+    path: "/security-chat",
   },
 ];
 
 export function AppSidebar() {
   const mobileInfo = useMobileDetection();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
+  const handleNavigation = (path: string) => {
+    navigate(path);
   };
 
   return (
@@ -112,7 +117,10 @@ export function AppSidebar() {
             <SidebarMenu>
               {securityFeatures.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton onClick={() => scrollToSection(item.section)}>
+                  <SidebarMenuButton 
+                    onClick={() => handleNavigation(item.path)}
+                    isActive={location.pathname === item.path}
+                  >
                     <item.icon className="w-4 h-4" />
                     <span>{item.title}</span>
                   </SidebarMenuButton>
@@ -128,7 +136,10 @@ export function AppSidebar() {
             <SidebarMenu>
               {additionalFeatures.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton onClick={() => scrollToSection(item.section)}>
+                  <SidebarMenuButton 
+                    onClick={() => handleNavigation(item.path)}
+                    isActive={location.pathname === item.path}
+                  >
                     <item.icon className="w-4 h-4" />
                     <span>{item.title}</span>
                   </SidebarMenuButton>
