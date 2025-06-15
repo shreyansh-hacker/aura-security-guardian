@@ -2,7 +2,6 @@
 import { Device, DeviceInfo } from '@capacitor/device';
 import { App, AppInfo, AppState } from '@capacitor/app';
 import { Network, ConnectionStatus } from '@capacitor/network';
-import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 
 export interface RealAppInfo {
@@ -124,27 +123,12 @@ class DeviceDataService {
       };
     }
 
-    try {
-      // For native apps, we'd need a custom plugin or use Filesystem
-      const documentsDir = await Filesystem.stat({
-        path: '',
-        directory: Directory.Documents
-      });
-      
-      // This is a simplified estimation - real implementation would need native code
-      return {
-        totalSpace: 64000000000, // Would need native implementation
-        freeSpace: 32000000000,
-        usedSpace: 32000000000
-      };
-    } catch (error) {
-      console.log('Storage info failed:', error);
-      return {
-        totalSpace: 64000000000,
-        freeSpace: 32000000000,
-        usedSpace: 32000000000
-      };
-    }
+    // For native apps, return estimated values
+    return {
+      totalSpace: 64000000000,
+      freeSpace: 32000000000,
+      usedSpace: 32000000000
+    };
   }
 
   getMemoryUsage(): number {

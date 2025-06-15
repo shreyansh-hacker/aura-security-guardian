@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Scan, Shield, AlertTriangle, CheckCircle, X, Clock, Zap } from "lucide-react";
 import { toast } from "sonner";
@@ -18,59 +19,64 @@ interface AppScanResult {
 
 const SIMULATED_APPS: AppScanResult[] = [
   {
-    name: "WhatsApp",
-    packageName: "com.whatsapp",
-    version: "2.23.24.14",
-    permissions: ["Camera", "Microphone", "Contacts", "Storage"],
+    name: "Social Media App",
+    packageName: "com.example.social",
+    version: "3.2.1",
+    permissions: ["Camera", "Microphone", "Location", "Contacts", "Storage"],
     riskLevel: "Low",
     threats: [],
     lastUpdate: "2024-01-15",
-    size: "127 MB",
-    icon: "💬"
+    size: "45 MB",
+    icon: "📱",
+    isReal: false
   },
   {
-    name: "Chrome",
-    packageName: "com.android.chrome",
-    version: "120.0.6099.43",
-    permissions: ["Location", "Camera", "Microphone", "Storage", "Contacts"],
+    name: "Photo Editor Pro",
+    packageName: "com.photoeditor.pro",
+    version: "2.1.0",
+    permissions: ["Camera", "Storage", "Network", "Phone"],
     riskLevel: "Medium",
-    threats: ["Excessive permissions"],
+    threats: ["Excessive permissions requested", "Network activity during background"],
     lastUpdate: "2024-01-10",
-    size: "156 MB",
-    icon: "🌐"
+    size: "78 MB",
+    icon: "📷",
+    isReal: false
   },
   {
-    name: "FlashLight Pro",
-    packageName: "com.suspicious.flashlight",
-    version: "1.2.3",
-    permissions: ["Camera", "Location", "Contacts", "SMS", "Phone"],
+    name: "Unknown Cleaner",
+    packageName: "com.unknown.cleaner",
+    version: "1.0.5",
+    permissions: ["Storage", "Phone", "SMS", "Contacts", "Location"],
     riskLevel: "Critical",
-    threats: ["Suspicious permissions", "Data collection", "Possible malware"],
-    lastUpdate: "2023-06-15",
+    threats: ["Suspicious data collection", "Excessive permissions", "Unknown developer"],
+    lastUpdate: "2023-12-01",
     size: "12 MB",
-    icon: "🔦"
+    icon: "🧹",
+    isReal: false
   },
   {
-    name: "Banking App",
-    packageName: "com.bank.mobile",
-    version: "5.2.1",
-    permissions: ["Biometric", "Storage"],
+    name: "Weather Widget",
+    packageName: "com.weather.widget",
+    version: "4.1.2",
+    permissions: ["Location", "Network"],
     riskLevel: "Low",
     threats: [],
     lastUpdate: "2024-01-20",
-    size: "89 MB",
-    icon: "🏦"
+    size: "8 MB",
+    icon: "🌤️",
+    isReal: false
   },
   {
-    name: "Social Connect",
-    packageName: "com.unknown.social",
-    version: "2.1.0",
-    permissions: ["Location", "Camera", "Microphone", "Contacts", "SMS", "Storage"],
+    name: "Gaming Booster",
+    packageName: "com.gaming.booster",
+    version: "1.5.3",
+    permissions: ["Storage", "Network", "Phone", "Device Admin"],
     riskLevel: "High",
-    threats: ["Over-privileged app", "Unknown developer", "Privacy concerns"],
-    lastUpdate: "2023-11-30",
-    size: "67 MB",
-    icon: "📱"
+    threats: ["Device admin access", "Potential adware", "Network anomalies"],
+    lastUpdate: "2024-01-05",
+    size: "23 MB",
+    icon: "🎮",
+    isReal: false
   }
 ];
 
@@ -180,29 +186,26 @@ export default function AppsScanner() {
 
   const getRiskColor = (risk: string) => {
     switch (risk) {
-      case 'Critical': return 'text-red-700 bg-red-100 border-red-200';
-      case 'High': return 'text-red-600 bg-red-50 border-red-200';
-      case 'Medium': return 'text-orange-600 bg-orange-50 border-orange-200';
-      case 'Low': return 'text-green-600 bg-green-50 border-green-200';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+      case 'Critical': return 'bg-red-100 text-red-800 border-red-300';
+      case 'High': return 'bg-orange-100 text-orange-800 border-orange-300';
+      case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      default: return 'bg-green-100 text-green-800 border-green-300';
     }
   };
 
   const getRiskIcon = (risk: string) => {
     switch (risk) {
-      case 'Critical':
-      case 'High': return <AlertTriangle className="w-4 h-4" />;
-      case 'Medium': return <Clock className="w-4 h-4" />;
-      case 'Low': return <CheckCircle className="w-4 h-4" />;
-      default: return <Shield className="w-4 h-4" />;
+      case 'Critical': return <AlertTriangle className="w-3 h-3" />;
+      case 'High': return <AlertTriangle className="w-3 h-3" />;
+      case 'Medium': return <Clock className="w-3 h-3" />;
+      default: return <CheckCircle className="w-3 h-3" />;
     }
   };
 
   const quarantineApp = (app: AppScanResult) => {
     toast.success(`🔒 ${app.name} has been quarantined`, {
-      description: "App access restricted until manual review"
+      description: "App access restricted and flagged for review"
     });
-    setScanResults(prev => prev.filter(a => a.packageName !== app.packageName));
   };
 
   return (
