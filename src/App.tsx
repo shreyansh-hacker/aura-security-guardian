@@ -17,6 +17,7 @@ import BatteryMonitorPage from "./pages/BatteryMonitorPage";
 import AiDetectionPage from "./pages/AiDetectionPage";
 import AppLockPage from "./pages/AppLockPage";
 import SecurityChatPage from "./pages/SecurityChatPage";
+import EmailSecurityPage from "./pages/EmailSecurityPage";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/ai-detection" element={<AiDetectionPage />} />
           <Route path="/app-lock" element={<AppLockPage />} />
           <Route path="/security-chat" element={<SecurityChatPage />} />
+          <Route path="/email-security" element={<EmailSecurityPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
