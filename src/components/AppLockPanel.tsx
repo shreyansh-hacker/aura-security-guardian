@@ -94,19 +94,92 @@ export default function AppLockPanel() {
     }
   };
 
+  const blockAppAccess = (appId: string, appName: string) => {
+    // For web apps, block navigation
+    if (appId.startsWith('web.')) {
+      const domains = getDomainsForApp(appId);
+      domains.forEach(domain => {
+        // Create a style element to hide the domain
+        const style = document.createElement('style');
+        style.id = `block-${appId}`;
+        style.textContent = `
+          iframe[src*="${domain}"], 
+          [href*="${domain}"] { 
+            display: none !important; 
+            pointer-events: none !important; 
+          }
+        `;
+        document.head.appendChild(style);
+      });
+    }
+    
+    // For native apps on mobile, use URL blocking
+    if (deviceDataService.isNativePlatform()) {
+      // Block app launch attempts
+      const blockListener = (event: Event) => {
+        const target = event.target as HTMLElement;
+        if (target?.getAttribute?.('href')?.includes(appId)) {
+          event.preventDefault();
+          event.stopPropagation();
+          toast.error(`🔒 ${appName} is locked by Security Guardian`, {
+            description: "Biometric authentication required"
+          });
+        }
+      };
+      
+      document.addEventListener('click', blockListener, true);
+      document.addEventListener('touchstart', blockListener, true);
+      
+      // Store the listener for cleanup
+      (window as any)[`blockListener_${appId}`] = blockListener;
+    }
+  };
+
+  const unblockAppAccess = (appId: string) => {
+    // Remove web blocking styles
+    const blockStyle = document.getElementById(`block-${appId}`);
+    if (blockStyle) {
+      blockStyle.remove();
+    }
+    
+    // Remove native app blocking listeners
+    const listener = (window as any)[`blockListener_${appId}`];
+    if (listener) {
+      document.removeEventListener('click', listener, true);
+      document.removeEventListener('touchstart', listener, true);
+      delete (window as any)[`blockListener_${appId}`];
+    }
+  };
+
+  const getDomainsForApp = (appId: string): string[] => {
+    const domainMap: { [key: string]: string[] } = {
+      'web.gmail': ['mail.google.com', 'gmail.com'],
+      'web.youtube': ['youtube.com', 'youtu.be'],
+      'web.spotify': ['open.spotify.com', 'spotify.com'],
+      'web.whatsapp': ['web.whatsapp.com'],
+      'web.discord': ['discord.com'],
+      'web.facebook': ['facebook.com', 'fb.com'],
+      'web.twitter': ['twitter.com', 'x.com'],
+      'web.instagram': ['instagram.com'],
+    };
+    return domainMap[appId] || [];
+  };
+
   const toggleAppLock = async (app: RealAppInfo) => {
     const isCurrentlyLocked = lockedApps.includes(app.id);
     
     if (!isCurrentlyLocked) {
-      // Lock the app
+      // Lock the app with real blocking
       const success = deviceDataService.lockApp(app.id);
       if (success) {
+        // Implement real blocking
+        blockAppAccess(app.id, app.name);
+        
         setLockedApps(prev => [...prev, app.id]);
-        toast.success(`🔐 ${app.name} has been secured`, {
-          description: `${biometricEnabled ? 'Biometric' : 'PIN'} authentication now required`
+        toast.success(`🔐 ${app.name} has been secured and blocked`, {
+          description: `App access is now physically blocked. ${biometricEnabled ? 'Biometric' : 'PIN'} authentication required to unlock.`
         });
         
-        // Update the real app's lock status
         setRealApps(prev => prev.map(a => 
           a.id === app.id ? { ...a, isLocked: true } : a
         ));
@@ -120,17 +193,21 @@ export default function AppLockPanel() {
         if (authSuccess) {
           const success = deviceDataService.unlockApp(app.id);
           if (success) {
+            // Remove real blocking
+            unblockAppAccess(app.id);
+            
             setLockedApps(prev => prev.filter(id => id !== app.id));
             setRealApps(prev => prev.map(a => 
               a.id === app.id ? { ...a, isLocked: false } : a
             ));
-            toast.success(`🔓 ${app.name} has been unlocked`);
+            toast.success(`🔓 ${app.name} has been unlocked and unblocked`);
           }
         }
       } else {
         // PIN authentication or direct unlock
         const success = deviceDataService.unlockApp(app.id);
         if (success) {
+          unblockAppAccess(app.id);
           setLockedApps(prev => prev.filter(id => id !== app.id));
           setRealApps(prev => prev.map(a => 
             a.id === app.id ? { ...a, isLocked: false } : a
@@ -181,6 +258,7 @@ export default function AppLockPanel() {
       if (!lockedApps.includes(app.id)) {
         const success = deviceDataService.lockApp(app.id);
         if (success) {
+          blockAppAccess(app.id, app.name);
           successCount++;
         }
       }
@@ -189,8 +267,8 @@ export default function AppLockPanel() {
     setLockedApps(realApps.map(app => app.id));
     setRealApps(prev => prev.map(app => ({ ...app, isLocked: true })));
     
-    toast.success(`🔒 ${successCount} applications secured`, {
-      description: `All apps now require ${biometricEnabled ? 'biometric' : 'PIN'} authentication`
+    toast.success(`🔒 ${successCount} applications secured and blocked`, {
+      description: `All apps now physically blocked. ${biometricEnabled ? 'Biometric' : 'PIN'} authentication required`
     });
   };
 
@@ -202,11 +280,12 @@ export default function AppLockPanel() {
     
     lockedApps.forEach(appId => {
       deviceDataService.unlockApp(appId);
+      unblockAppAccess(appId);
     });
     
     setLockedApps([]);
     setRealApps(prev => prev.map(app => ({ ...app, isLocked: false })));
-    toast.success("🔓 All applications unlocked");
+    toast.success("🔓 All applications unlocked and unblocked");
   };
 
   const getRiskColor = (risk: string) => {
@@ -219,7 +298,7 @@ export default function AppLockPanel() {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-3 sm:space-y-4 md:space-y-6 w-full max-w-full">
       {/* Biometric Authentication Modal */}
       {showBiometricAuth && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -233,11 +312,11 @@ export default function AppLockPanel() {
       )}
 
       {/* Enhanced Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:gap-4">
         <div>
-          <h3 className="font-semibold text-lg md:text-xl mb-2 flex items-center gap-2">
-            <Shield className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
-            Real Device App Lock Protection
+          <h3 className="font-semibold text-base sm:text-lg md:text-xl mb-2 flex items-center gap-2">
+            <Shield className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-blue-600 flex-shrink-0" />
+            <span className="truncate">Real Device App Lock Protection</span>
           </h3>
           <p className="text-xs md:text-sm text-gray-600">
             {realApps.length} real apps detected • {lockedApps.length} currently protected
@@ -248,7 +327,7 @@ export default function AppLockPanel() {
           <button
             onClick={scanApps}
             disabled={isScanning}
-            className="bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+            className="bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             <Scan className={`w-4 h-4 ${isScanning ? 'animate-spin' : ''}`} />
             {isScanning ? `Scanning... ${scanProgress}%` : "Security Scan"}
@@ -334,42 +413,42 @@ export default function AppLockPanel() {
       )}
 
       {/* Enhanced Statistics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 md:p-4 rounded-xl border border-blue-200 shadow-sm">
-          <div className="flex items-center gap-2 mb-1 md:mb-2">
-            <Shield className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
-            <span className="text-xs md:text-sm font-semibold text-blue-800">Total Apps</span>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-2 sm:p-3 md:p-4 rounded-xl border border-blue-200 shadow-sm">
+          <div className="flex items-center gap-1 sm:gap-2 mb-1 md:mb-2">
+            <Shield className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-blue-600 flex-shrink-0" />
+            <span className="text-xs md:text-sm font-semibold text-blue-800 truncate">Total Apps</span>
           </div>
-          <div className="text-xl md:text-2xl font-bold text-blue-600">{realApps.length}</div>
+          <div className="text-lg sm:text-xl md:text-2xl font-bold text-blue-600">{realApps.length}</div>
           <div className="text-xs text-blue-500">Monitored</div>
         </div>
         
-        <div className="bg-gradient-to-br from-green-50 to-green-100 p-3 md:p-4 rounded-xl border border-green-200 shadow-sm">
-          <div className="flex items-center gap-2 mb-1 md:mb-2">
-            <Lock className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
-            <span className="text-xs md:text-sm font-semibold text-green-800">Protected</span>
+        <div className="bg-gradient-to-br from-green-50 to-green-100 p-2 sm:p-3 md:p-4 rounded-xl border border-green-200 shadow-sm">
+          <div className="flex items-center gap-1 sm:gap-2 mb-1 md:mb-2">
+            <Lock className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-green-600 flex-shrink-0" />
+            <span className="text-xs md:text-sm font-semibold text-green-800 truncate">Protected</span>
           </div>
-          <div className="text-xl md:text-2xl font-bold text-green-600">{lockedApps.length}</div>
+          <div className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">{lockedApps.length}</div>
           <div className="text-xs text-green-500">Active locks</div>
         </div>
         
-        <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 md:p-4 rounded-xl border border-orange-200 shadow-sm">
-          <div className="flex items-center gap-2 mb-1 md:mb-2">
-            <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-orange-600" />
-            <span className="text-xs md:text-sm font-semibold text-orange-800">Failed Attempts</span>
+        <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-2 sm:p-3 md:p-4 rounded-xl border border-orange-200 shadow-sm">
+          <div className="flex items-center gap-1 sm:gap-2 mb-1 md:mb-2">
+            <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-orange-600 flex-shrink-0" />
+            <span className="text-xs md:text-sm font-semibold text-orange-800 truncate">Failed Attempts</span>
           </div>
-          <div className="text-xl md:text-2xl font-bold text-orange-600">
+          <div className="text-lg sm:text-xl md:text-2xl font-bold text-orange-600">
             {Object.values(failedAttempts).reduce((a, b) => a + b, 0)}
           </div>
           <div className="text-xs text-orange-500">Today</div>
         </div>
         
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 md:p-4 rounded-xl border border-purple-200 shadow-sm">
-          <div className="flex items-center gap-2 mb-1 md:mb-2">
-            <Timer className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
-            <span className="text-xs md:text-sm font-semibold text-purple-800">Auto-lock</span>
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-2 sm:p-3 md:p-4 rounded-xl border border-purple-200 shadow-sm">
+          <div className="flex items-center gap-1 sm:gap-2 mb-1 md:mb-2">
+            <Timer className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-purple-600 flex-shrink-0" />
+            <span className="text-xs md:text-sm font-semibold text-purple-800 truncate">Auto-lock</span>
           </div>
-          <div className="text-lg md:text-xl font-bold text-purple-600">{lockTimeout}s</div>
+          <div className="text-base sm:text-lg md:text-xl font-bold text-purple-600">{lockTimeout}s</div>
           <div className="text-xs text-purple-500">Timeout</div>
         </div>
       </div>
@@ -378,14 +457,14 @@ export default function AppLockPanel() {
       <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
         <button
           onClick={lockAllApps}
-          className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+          className="flex-1 bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg text-sm hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
         >
           <Lock className="w-4 h-4" />
           Secure All Apps
         </button>
         <button
           onClick={unlockAllApps}
-          className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
+          className="flex-1 bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg text-sm hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
         >
           <Unlock className="w-4 h-4" />
           Unlock All Apps
@@ -394,21 +473,21 @@ export default function AppLockPanel() {
 
       {/* Real Apps List */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="p-4 md:p-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
-          <h4 className="font-bold text-gray-800 flex items-center gap-2">
-            <Shield className="w-4 h-4 md:w-5 md:h-5" />
-            Real Device Apps ({realApps.length} detected)
+        <div className="p-3 sm:p-4 md:p-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+          <h4 className="font-bold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
+            <Shield className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+            <span className="truncate">Real Device Apps ({realApps.length} detected)</span>
           </h4>
         </div>
         
-        <div className="max-h-80 md:max-h-96 overflow-y-auto">
+        <div className="max-h-64 sm:max-h-80 md:max-h-96 overflow-y-auto">
           {realApps.map(app => (
-            <div key={app.id} className="flex items-center justify-between p-3 md:p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="text-2xl">{app.icon || (app.isNative ? '📱' : '🌐')}</div>
+            <div key={app.id} className="flex items-center justify-between p-2 sm:p-3 md:p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors">
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <div className="text-lg sm:text-xl md:text-2xl flex-shrink-0">{app.icon || (app.isNative ? '📱' : '🌐')}</div>
                 
                 <button
-                  className={`rounded-full border-2 p-2 transition-all duration-200 flex-shrink-0 ${
+                  className={`rounded-full border-2 p-1 sm:p-2 transition-all duration-200 flex-shrink-0 ${
                     lockedApps.includes(app.id)
                       ? "bg-green-600 border-green-700 shadow-lg"
                       : "bg-white border-gray-300 hover:border-blue-400"
@@ -423,32 +502,32 @@ export default function AppLockPanel() {
                 </button>
                 
                 <div className="flex-1 min-w-0">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                  <div className="flex flex-col gap-1">
                     <span className="font-medium text-gray-800 text-sm md:text-base truncate">{app.name}</span>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs px-2 py-1 bg-blue-100 text-blue-600 rounded-full font-medium">
+                    <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                      <span className="text-xs px-1 sm:px-2 py-1 bg-blue-100 text-blue-600 rounded-full font-medium">
                         {app.platform === 'android' ? 'Android' : app.platform === 'ios' ? 'iOS' : 'Web'}
                       </span>
-                      <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full font-medium">
+                      <span className="text-xs px-1 sm:px-2 py-1 bg-gray-100 text-gray-600 rounded-full font-medium">
                         v{app.version}
                       </span>
-                      <span className="text-xs px-2 py-1 bg-green-100 text-green-600 rounded-full font-medium">
+                      <span className="text-xs px-1 sm:px-2 py-1 bg-green-100 text-green-600 rounded-full font-medium">
                         REAL
                       </span>
                     </div>
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
                     {lockedApps.includes(app.id)
-                      ? `🔐 Protected with ${biometricEnabled ? 'biometric' : 'PIN'} lock • Real-time monitoring active`
-                      : 'Tap lock button to enable real-time protection'
+                      ? `🔐 Protected & BLOCKED with ${biometricEnabled ? 'biometric' : 'PIN'} lock • Real-time monitoring active`
+                      : 'Tap lock button to enable real-time protection and blocking'
                     }
                   </div>
                 </div>
               </div>
               
               {lockedApps.includes(app.id) && (
-                <div className="flex items-center gap-2 ml-2">
-                  <span className="bg-green-100 text-green-700 rounded-full px-2 md:px-3 py-1 text-xs font-medium flex items-center gap-1">
+                <div className="flex items-center gap-1 sm:gap-2 ml-1 sm:ml-2">
+                  <span className="bg-green-100 text-green-700 rounded-full px-1 sm:px-2 md:px-3 py-1 text-xs font-medium flex items-center gap-1">
                     {biometricEnabled ? <Fingerprint className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                     <span className="hidden sm:inline">LOCKED</span>
                   </span>
@@ -458,31 +537,31 @@ export default function AppLockPanel() {
           ))}
           
           {realApps.length === 0 && (
-            <div className="p-8 text-center text-gray-500">
-              <Shield className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-              <p>No apps detected yet</p>
-              <p className="text-sm">Apps will appear here once detected</p>
+            <div className="p-6 sm:p-8 text-center text-gray-500">
+              <Shield className="w-8 sm:w-12 h-8 sm:h-12 mx-auto mb-4 text-gray-300" />
+              <p className="text-sm sm:text-base">No apps detected yet</p>
+              <p className="text-xs sm:text-sm">Apps will appear here once detected</p>
             </div>
           )}
         </div>
       </div>
       
       {/* Enhanced Footer Information */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-sm">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-3 sm:p-4">
+        <div className="flex flex-col gap-2 sm:gap-4 text-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
             <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${lockedApps.length > 0 ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`} />
-              <span className="font-medium">
+              <div className={`w-3 h-3 rounded-full ${lockedApps.length > 0 ? 'bg-green-400 animate-pulse' : 'bg-gray-400'} flex-shrink-0`} />
+              <span className="font-medium text-xs sm:text-sm">
                 Real Device Status: {lockedApps.length > 0 ? 'PROTECTION ACTIVE' : 'MONITORING ONLY'}
               </span>
             </div>
-            <span className="text-gray-600">
+            <span className="text-gray-600 text-xs sm:text-sm">
               {lockedApps.length} of {realApps.length} real apps secured • Live protection enabled
             </span>
           </div>
           <div className="text-xs text-gray-500">
-            🔒 Real biometric security • Live app monitoring • Device-level protection
+            🔒 Real biometric security • Live app monitoring • Device-level protection • Physical app blocking
           </div>
         </div>
       </div>

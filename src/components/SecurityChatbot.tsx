@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Shield, CheckCircle, AlertTriangle, Info, Zap } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
@@ -414,31 +413,31 @@ export default function SecurityChatbot() {
   };
 
   return (
-    <div className="rounded-3xl shadow-lg border border-blue-100 overflow-hidden max-w-full">
-      <div className="bg-gradient-to-tr from-blue-400 via-blue-100 to-white px-6 py-3 flex items-center gap-2">
-        <Shield className="w-6 h-6 text-blue-600" />
-        <h3 className="font-semibold text-lg text-blue-900">LiveAnswering</h3>
+    <div className="rounded-2xl shadow-lg border border-blue-100 overflow-hidden w-full max-w-full">
+      <div className="bg-gradient-to-tr from-blue-400 via-blue-100 to-white px-3 sm:px-6 py-2 sm:py-3 flex items-center gap-2">
+        <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0" />
+        <h3 className="font-semibold text-base sm:text-lg text-blue-900">LiveAnswering</h3>
         <div className="ml-auto flex items-center gap-1">
           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-          <span className="text-xs text-blue-700">AI Active</span>
+          <span className="text-xs text-blue-700 hidden sm:inline">AI Active</span>
         </div>
       </div>
       
-      <div className="bg-gray-50 px-4 py-3 h-80 overflow-y-auto mb-2 space-y-2 scrollbar-thin scrollbar-thumb-blue-100">
+      <div className="bg-gray-50 px-2 sm:px-4 py-3 h-64 sm:h-80 overflow-y-auto mb-2 space-y-2 scrollbar-thin scrollbar-thumb-blue-100">
         {messages.map((msg, i) => (
           <div
             key={i}
             className={`animate-fade-in ${msg.from === "bot" ? "justify-start" : "justify-end flex"}`}
           >
             {msg.from === "bot" ? (
-              <div className={`flex items-start gap-2 p-3 rounded-lg ${getMessageStyle(msg.type)}`}>
+              <div className={`flex items-start gap-1 sm:gap-2 p-2 sm:p-3 rounded-lg ${getMessageStyle(msg.type)}`}>
                 {getMessageIcon(msg.type)}
-                <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
+                <div className="text-xs sm:text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
                   {msg.text}
                 </div>
               </div>
             ) : (
-              <span className="text-sm bg-blue-500 text-white px-4 py-2 rounded-xl max-w-xs">
+              <span className="text-xs sm:text-sm bg-blue-500 text-white px-3 sm:px-4 py-2 rounded-xl max-w-xs">
                 {msg.text}
               </span>
             )}
@@ -446,14 +445,14 @@ export default function SecurityChatbot() {
         ))}
         
         {showSuggestions && (
-          <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-            <p className="text-sm font-medium text-gray-700 mb-2">💡 Suggested next steps:</p>
+          <div className="mt-4 p-2 sm:p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+            <p className="text-xs sm:text-sm font-medium text-gray-700 mb-2">💡 Suggested next steps:</p>
             <div className="space-y-1">
               {getFollowUpSuggestions(answers).map((suggestion, i) => (
                 <button
                   key={i}
                   onClick={() => handleSuggestionClick(suggestion)}
-                  className="block w-full text-left text-xs bg-white hover:bg-blue-50 px-3 py-2 rounded-lg border border-blue-200 transition-colors"
+                  className="block w-full text-left text-xs bg-white hover:bg-blue-50 px-2 sm:px-3 py-1 sm:py-2 rounded-lg border border-blue-200 transition-colors"
                 >
                   {suggestion}
                 </button>
@@ -464,11 +463,11 @@ export default function SecurityChatbot() {
       </div>
 
       {(step < interviewSteps.length && !submitted) && (
-        <div className="flex flex-col gap-3 mt-1 px-4 pb-3">
+        <div className="flex flex-col gap-2 sm:gap-3 mt-1 px-2 sm:px-4 pb-3">
           <div className="text-xs text-center text-gray-500">
             Step {step + 1} of {interviewSteps.length}
           </div>
-          <div className="max-h-32 overflow-y-auto">
+          <div className="max-h-24 sm:max-h-32 overflow-y-auto">
             <RadioGroup
               value={optionValue}
               onValueChange={setOptionValue}
@@ -476,10 +475,10 @@ export default function SecurityChatbot() {
             >
               {interviewSteps[step].options.map((option: string) => (
                 <div key={option} className="flex items-center space-x-2 mb-1 hover:bg-blue-50 p-1 rounded transition-colors">
-                  <RadioGroupItem value={option} id={option} />
+                  <RadioGroupItem value={option} id={option} className="flex-shrink-0" />
                   <label
                     htmlFor={option}
-                    className="text-sm cursor-pointer select-none flex-1"
+                    className="text-xs sm:text-sm cursor-pointer select-none flex-1 leading-tight"
                   >
                     {option}
                   </label>
@@ -488,7 +487,7 @@ export default function SecurityChatbot() {
             </RadioGroup>
           </div>
           <button
-            className={`bg-gradient-to-r from-blue-600 to-purple-600 text-white px-5 py-3 rounded-xl hover:scale-105 shadow-lg transition-all ${
+            className={`bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 sm:px-5 py-2 sm:py-3 rounded-xl hover:scale-105 shadow-lg transition-all text-sm ${
               isLoading || !optionValue ? "opacity-60 cursor-not-allowed" : "hover:shadow-xl"
             }`}
             onClick={handleSend}
@@ -499,7 +498,7 @@ export default function SecurityChatbot() {
         </div>
       )}
 
-      <div className="text-xs px-4 pb-2 text-gray-400 bg-gradient-to-r from-blue-50 to-purple-50">
+      <div className="text-xs px-2 sm:px-4 pb-2 text-gray-400 bg-gradient-to-r from-blue-50 to-purple-50">
         🤖 AI-powered security assistant providing real-time threat analysis<br />
         🔒 Your privacy is protected - all analysis happens locally
       </div>

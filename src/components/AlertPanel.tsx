@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { AlertTriangle, Bell, Shield, X, Wifi, Lock, Smartphone, Globe, Database, Clock, Eye, Activity } from "lucide-react";
 
@@ -258,16 +259,16 @@ export default function AlertPanel() {
   const criticalAlerts = activeAlerts.filter(alert => alert.severity === "critical" || alert.severity === "high").length;
 
   return (
-    <div className="bg-white rounded-2xl shadow p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-lg flex items-center gap-2">
-          <Bell className="w-5 h-5 text-red-500" /> 
-          Real-time Security Monitor
+    <div className="bg-white rounded-xl sm:rounded-2xl shadow p-3 sm:p-4 w-full max-w-full">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h3 className="font-semibold text-base sm:text-lg flex items-center gap-2">
+          <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 flex-shrink-0" /> 
+          <span className="truncate">Real-time Security Monitor</span>
         </h3>
         {activeAlerts.length > 0 && (
           <button 
             onClick={clearAllAlerts}
-            className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 hover:bg-gray-100 rounded"
+            className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 hover:bg-gray-100 rounded flex-shrink-0"
           >
             Clear All
           </button>
@@ -275,88 +276,89 @@ export default function AlertPanel() {
       </div>
 
       {/* Real-time System Stats */}
-      <div className="grid grid-cols-3 gap-2 mb-4 text-center">
-        <div className="bg-blue-50 p-2 rounded">
-          <div className="text-lg font-bold text-blue-600">{stats.totalScans}</div>
+      <div className="grid grid-cols-3 gap-1 sm:gap-2 mb-3 sm:mb-4 text-center">
+        <div className="bg-blue-50 p-2 rounded text-xs sm:text-sm">
+          <div className="text-base sm:text-lg font-bold text-blue-600">{stats.totalScans}</div>
           <div className="text-xs text-blue-500">Total Scans</div>
         </div>
-        <div className="bg-green-50 p-2 rounded">
-          <div className="text-lg font-bold text-green-600">{stats.threatsBlocked}</div>
+        <div className="bg-green-50 p-2 rounded text-xs sm:text-sm">
+          <div className="text-base sm:text-lg font-bold text-green-600">{stats.threatsBlocked}</div>
           <div className="text-xs text-green-500">Blocked</div>
         </div>
-        <div className="bg-orange-50 p-2 rounded">
-          <div className="text-lg font-bold text-orange-600">{criticalAlerts}</div>
+        <div className="bg-orange-50 p-2 rounded text-xs sm:text-sm">
+          <div className="text-base sm:text-lg font-bold text-orange-600">{criticalAlerts}</div>
           <div className="text-xs text-orange-500">Critical</div>
         </div>
       </div>
 
       {/* Real-time Performance Indicators */}
-      <div className="bg-gray-50 p-3 rounded-lg mb-4">
-        <div className="grid grid-cols-2 gap-3 text-xs">
+      <div className="bg-gray-50 p-2 sm:p-3 rounded-lg mb-3 sm:mb-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs">
           <div className="flex items-center justify-between">
-            <span>CPU Usage:</span>
-            <span className={`font-bold ${realTimeStats.cpuUsage > 70 ? 'text-red-600' : realTimeStats.cpuUsage > 40 ? 'text-orange-500' : 'text-green-600'}`}>
+            <span className="truncate">CPU Usage:</span>
+            <span className={`font-bold ml-1 ${realTimeStats.cpuUsage > 70 ? 'text-red-600' : realTimeStats.cpuUsage > 40 ? 'text-orange-500' : 'text-green-600'}`}>
               {realTimeStats.cpuUsage}%
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span>Memory:</span>
-            <span className={`font-bold ${realTimeStats.memoryUsage > 70 ? 'text-red-600' : realTimeStats.memoryUsage > 40 ? 'text-orange-500' : 'text-green-600'}`}>
+            <span className="truncate">Memory:</span>
+            <span className={`font-bold ml-1 ${realTimeStats.memoryUsage > 70 ? 'text-red-600' : realTimeStats.memoryUsage > 40 ? 'text-orange-500' : 'text-green-600'}`}>
               {realTimeStats.memoryUsage}%
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span>Network:</span>
+            <span className="truncate">Network:</span>
             <span className={`font-bold flex items-center gap-1 ${realTimeStats.networkActivity ? 'text-green-600' : 'text-red-600'}`}>
-              <div className={`w-2 h-2 rounded-full ${realTimeStats.networkActivity ? 'bg-green-400' : 'bg-red-400'}`}></div>
-              {realTimeStats.networkActivity ? 'Online' : 'Offline'}
+              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${realTimeStats.networkActivity ? 'bg-green-400' : 'bg-red-400'}`}></div>
+              <span className="hidden sm:inline">{realTimeStats.networkActivity ? 'Online' : 'Offline'}</span>
+              <span className="sm:hidden">{realTimeStats.networkActivity ? 'On' : 'Off'}</span>
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span>Status:</span>
-            <span className="font-bold text-blue-600">{stats.systemStatus}</span>
+            <span className="truncate">Status:</span>
+            <span className="font-bold text-blue-600 truncate">{stats.systemStatus}</span>
           </div>
         </div>
       </div>
 
       {/* Alert Status */}
-      <div className="mb-3 flex items-center justify-between text-xs">
+      <div className="mb-2 sm:mb-3 flex items-center justify-between text-xs">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse flex-shrink-0"></div>
           <span className="text-gray-600">Live Monitoring</span>
         </div>
-        <div className="text-gray-400">
+        <div className="text-gray-400 truncate ml-2">
           Updated: {stats.lastUpdate.toLocaleTimeString()}
         </div>
       </div>
 
       {/* Alerts List */}
-      <div className="space-y-2 h-[280px] overflow-y-auto pr-2">
+      <div className="space-y-1 sm:space-y-2 h-48 sm:h-[280px] overflow-y-auto pr-1 sm:pr-2">
         {activeAlerts.length === 0 ? (
-          <div className="text-center py-8">
-            <Shield className="w-8 h-8 text-green-500 mx-auto mb-2" />
-            <div className="text-green-600 font-medium">System Secure</div>
-            <div className="text-sm text-gray-500">No active threats detected</div>
+          <div className="text-center py-6 sm:py-8">
+            <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 mx-auto mb-2" />
+            <div className="text-sm sm:text-base text-green-600 font-medium">System Secure</div>
+            <div className="text-xs sm:text-sm text-gray-500">No active threats detected</div>
           </div>
         ) : (
           activeAlerts.map((alert) => (
             <div
               key={alert.id}
-              className={`flex items-start gap-3 rounded-lg p-3 border-l-4 animate-fade-in relative ${getSeverityColor(alert.severity)}`}
+              className={`flex items-start gap-2 sm:gap-3 rounded-lg p-2 sm:p-3 border-l-4 animate-fade-in relative ${getSeverityColor(alert.severity)}`}
             >
               <div className="flex-shrink-0 mt-0.5">{alert.icon}</div>
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between">
-                  <div>
-                    <div className="font-medium text-sm">{alert.message}</div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-gray-500">{alert.type}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium text-xs sm:text-sm pr-2">{alert.message}</div>
+                    <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-1">
+                      <span className="text-xs text-gray-500 truncate">{alert.type}</span>
                       <span className={`text-xs font-medium ${getSeverityText(alert.severity)}`}>
                         {alert.severity.toUpperCase()}
                       </span>
                       {alert.systemContext?.platform && (
-                        <span className="text-xs bg-gray-200 text-gray-600 px-1 rounded">
+                        <span className="text-xs bg-gray-200 text-gray-600 px-1 rounded truncate">
                           {alert.systemContext.platform}
                         </span>
                       )}
@@ -364,16 +366,16 @@ export default function AlertPanel() {
                   </div>
                   <button
                     onClick={() => dismissAlert(alert.id)}
-                    className="flex-shrink-0 p-1 hover:bg-gray-200 rounded ml-2"
+                    className="flex-shrink-0 p-1 hover:bg-gray-200 rounded ml-1"
                   >
                     <X className="w-3 h-3 text-gray-400" />
                   </button>
                 </div>
-                <div className="flex items-center gap-1 mt-2 text-xs text-gray-400">
-                  <Clock className="w-3 h-3" />
-                  {alert.time}
+                <div className="flex items-center gap-1 mt-1 sm:mt-2 text-xs text-gray-400">
+                  <Clock className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate">{alert.time}</span>
                   {alert.systemContext?.online !== undefined && (
-                    <span className={`ml-2 ${alert.systemContext.online ? 'text-green-500' : 'text-red-500'}`}>
+                    <span className={`ml-1 sm:ml-2 ${alert.systemContext.online ? 'text-green-500' : 'text-red-500'}`}>
                       • {alert.systemContext.online ? 'Online' : 'Offline'}
                     </span>
                   )}
@@ -385,8 +387,8 @@ export default function AlertPanel() {
       </div>
 
       {/* Footer with accurate system info */}
-      <div className="mt-3 pt-3 border-t text-center">
-        <div className="text-xs text-gray-400">
+      <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t text-center">
+        <div className="text-xs text-gray-400 leading-tight">
           🛡️ Real-time threat detection • {getBrowserInfo()} on {getPlatformInfo()} • Auto-refresh every 8s
         </div>
       </div>
