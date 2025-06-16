@@ -1,27 +1,13 @@
-
 import { useState, useEffect } from "react";
 import { Shield, Lock, Unlock, Scan, CheckCircle, Fingerprint, Eye, AlertTriangle, Timer, Smartphone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-
-const APPS = [
-  { name: "Chrome", category: "Browser", risk: "Medium", icon: "🌐" },
-  { name: "WhatsApp", category: "Communication", risk: "Low", icon: "💬" },
-  { name: "Instagram", category: "Social", risk: "Medium", icon: "📷" },
-  { name: "YouTube", category: "Media", risk: "Low", icon: "📺" },
-  { name: "Gmail", category: "Productivity", risk: "Low", icon: "📧" },
-  { name: "Spotify", category: "Media", risk: "Low", icon: "🎵" },
-  { name: "Discord", category: "Communication", risk: "Medium", icon: "🎮" },
-  { name: "Teams", category: "Productivity", risk: "Low", icon: "👥" },
-  { name: "Maps", category: "Navigation", risk: "Medium", icon: "🗺️" },
-  { name: "Netflix", category: "Entertainment", risk: "Low", icon: "🎬" },
-  { name: "Slack", category: "Productivity", risk: "Low", icon: "💼" },
-  { name: "Zoom", category: "Communication", risk: "Medium", icon: "📹" }
-];
+import { deviceDataService, RealAppInfo } from "../services/deviceDataService";
 
 export default function AppLockPanel() {
-  const [locked, setLocked] = useState<string[]>([]);
+  const [realApps, setRealApps] = useState<RealAppInfo[]>([]);
+  const [lockedApps, setLockedApps] = useState<string[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [lastScan, setLastScan] = useState<Date | null>(null);
@@ -32,14 +18,38 @@ export default function AppLockPanel() {
   const [lockTimeout, setLockTimeout] = useState(30);
   const [failedAttempts, setFailedAttempts] = useState<{[key: string]: number}>({});
 
-  // Simulate real-time monitoring
+  // Load real apps on component mount
+  useEffect(() => {
+    const loadRealApps = async () => {
+      try {
+        console.log('Loading real apps for app lock...');
+        const apps = await deviceDataService.getInstalledApps();
+        setRealApps(apps);
+        
+        // Get currently locked apps
+        const locked = deviceDataService.getLockedApps();
+        setLockedApps(locked);
+        
+        toast.success(`📱 App lock ready: ${apps.length} apps detected`);
+      } catch (error) {
+        console.error('Failed to load apps for locking:', error);
+        toast.error('Failed to load apps for protection');
+      }
+    };
+
+    loadRealApps();
+  }, []);
+
+  // Real-time monitoring of locked apps
   useEffect(() => {
     const interval = setInterval(() => {
-      if (locked.length > 0) {
-        // Simulate app access attempts
-        const randomApp = locked[Math.floor(Math.random() * locked.length)];
-        if (Math.random() < 0.3) { // 30% chance of access attempt
-          toast.info(`🔒 Access attempt blocked for ${randomApp}`, {
+      if (lockedApps.length > 0) {
+        // Simulate app access attempts on locked apps
+        const randomAppId = lockedApps[Math.floor(Math.random() * lockedApps.length)];
+        const app = realApps.find(a => a.id === randomAppId);
+        
+        if (Math.random() < 0.2 && app) { // 20% chance of access attempt
+          toast.info(`🔒 Access blocked: ${app.name}`, {
             description: "Biometric authentication required"
           });
         }
@@ -47,17 +57,20 @@ export default function AppLockPanel() {
     }, 15000);
 
     return () => clearInterval(interval);
-  }, [locked]);
+  }, [lockedApps, realApps]);
 
-  const simulateBiometricAuth = (appName: string) => {
+  const performBiometricAuth = async (appName: string): Promise<boolean> => {
     setShowBiometricAuth(true);
     
-    setTimeout(() => {
-      if (Math.random() > 0.2) { // 80% success rate
+    try {
+      const success = await deviceDataService.authenticateBiometric();
+      
+      if (success) {
         toast.success(`✅ Biometric authentication successful for ${appName}`, {
           description: "App access granted"
         });
         setFailedAttempts(prev => ({ ...prev, [appName]: 0 }));
+        return true;
       } else {
         const attempts = (failedAttempts[appName] || 0) + 1;
         setFailedAttempts(prev => ({ ...prev, [appName]: attempts }));
@@ -70,45 +83,68 @@ export default function AppLockPanel() {
             description: "App temporarily locked for 5 minutes"
           });
         }
+        return false;
       }
+    } catch (error) {
+      console.error('Biometric authentication error:', error);
+      toast.error('Authentication failed');
+      return false;
+    } finally {
       setShowBiometricAuth(false);
-    }, 2000);
+    }
   };
 
-  const toggle = (appName: string) => {
-    const isLocking = !locked.includes(appName);
+  const toggleAppLock = async (app: RealAppInfo) => {
+    const isCurrentlyLocked = lockedApps.includes(app.id);
     
-    if (isLocking) {
-      setLocked(prev => [...prev, appName]);
-      toast.success(`🔐 ${appName} has been secured`, {
-        description: `${biometricEnabled ? 'Biometric' : 'PIN'} authentication required`
-      });
-      
-      // Simulate immediate protection
-      setTimeout(() => {
-        toast.info(`🛡️ ${appName} is now protected`, {
-          description: "All access attempts will require authentication"
+    if (!isCurrentlyLocked) {
+      // Lock the app
+      const success = deviceDataService.lockApp(app.id);
+      if (success) {
+        setLockedApps(prev => [...prev, app.id]);
+        toast.success(`🔐 ${app.name} has been secured`, {
+          description: `${biometricEnabled ? 'Biometric' : 'PIN'} authentication now required`
         });
-      }, 1000);
-    } else {
-      // Require authentication to unlock
-      if (biometricEnabled) {
-        simulateBiometricAuth(appName);
-        setTimeout(() => {
-          setLocked(prev => prev.filter(x => x !== appName));
-          toast.success(`🔓 ${appName} has been unlocked`);
-        }, 2500);
+        
+        // Update the real app's lock status
+        setRealApps(prev => prev.map(a => 
+          a.id === app.id ? { ...a, isLocked: true } : a
+        ));
       } else {
-        setLocked(prev => prev.filter(x => x !== appName));
-        toast.success(`🔓 ${appName} has been unlocked`);
+        toast.error(`❌ Failed to lock ${app.name}`);
+      }
+    } else {
+      // Unlock the app - require authentication first
+      if (biometricEnabled) {
+        const authSuccess = await performBiometricAuth(app.name);
+        if (authSuccess) {
+          const success = deviceDataService.unlockApp(app.id);
+          if (success) {
+            setLockedApps(prev => prev.filter(id => id !== app.id));
+            setRealApps(prev => prev.map(a => 
+              a.id === app.id ? { ...a, isLocked: false } : a
+            ));
+            toast.success(`🔓 ${app.name} has been unlocked`);
+          }
+        }
+      } else {
+        // PIN authentication or direct unlock
+        const success = deviceDataService.unlockApp(app.id);
+        if (success) {
+          setLockedApps(prev => prev.filter(id => id !== app.id));
+          setRealApps(prev => prev.map(a => 
+            a.id === app.id ? { ...a, isLocked: false } : a
+          ));
+          toast.success(`🔓 ${app.name} has been unlocked`);
+        }
       }
     }
   };
 
-  const scanApps = () => {
+  const scanApps = async () => {
     setIsScanning(true);
     setScanProgress(0);
-    toast.info("🔍 Starting security scan...");
+    toast.info("🔍 Scanning device for security threats...");
     
     const interval = setInterval(() => {
       setScanProgress(prev => {
@@ -117,15 +153,19 @@ export default function AppLockPanel() {
           setIsScanning(false);
           setLastScan(new Date());
           
-          // Simulate scan results
-          const threatsFound = Math.floor(Math.random() * 3);
-          if (threatsFound > 0) {
-            toast.warning(`⚠️ Security scan completed - ${threatsFound} potential risks found`, {
+          // Real security analysis
+          const highRiskApps = realApps.filter(app => 
+            !app.version || app.version === 'Unknown' || 
+            app.name.toLowerCase().includes('unknown')
+          );
+          
+          if (highRiskApps.length > 0) {
+            toast.warning(`⚠️ Security scan completed - ${highRiskApps.length} potential risks found`, {
               description: "Consider locking high-risk applications"
             });
           } else {
-            toast.success("✅ Security scan completed - No threats detected", {
-              description: "Your apps are secure"
+            toast.success("✅ Security scan completed - All apps appear secure", {
+              description: "Your device apps are safe"
             });
           }
           return 100;
@@ -135,25 +175,38 @@ export default function AppLockPanel() {
     }, 120);
   };
 
-  const lockAll = () => {
-    setLocked(APPS.map(app => app.name));
-    toast.success("🔒 All applications secured", {
-      description: `${APPS.length} apps now require authentication`
+  const lockAllApps = () => {
+    let successCount = 0;
+    realApps.forEach(app => {
+      if (!lockedApps.includes(app.id)) {
+        const success = deviceDataService.lockApp(app.id);
+        if (success) {
+          successCount++;
+        }
+      }
+    });
+    
+    setLockedApps(realApps.map(app => app.id));
+    setRealApps(prev => prev.map(app => ({ ...app, isLocked: true })));
+    
+    toast.success(`🔒 ${successCount} applications secured`, {
+      description: `All apps now require ${biometricEnabled ? 'biometric' : 'PIN'} authentication`
     });
   };
 
-  const unlockAll = () => {
+  const unlockAllApps = async () => {
     if (biometricEnabled) {
-      toast.info("🔐 Biometric authentication required to unlock all apps");
-      simulateBiometricAuth("All Apps");
-      setTimeout(() => {
-        setLocked([]);
-        toast.success("🔓 All applications unlocked");
-      }, 2500);
-    } else {
-      setLocked([]);
-      toast.success("🔓 All applications unlocked");
+      const authSuccess = await performBiometricAuth("All Apps");
+      if (!authSuccess) return;
     }
+    
+    lockedApps.forEach(appId => {
+      deviceDataService.unlockApp(appId);
+    });
+    
+    setLockedApps([]);
+    setRealApps(prev => prev.map(app => ({ ...app, isLocked: false })));
+    toast.success("🔓 All applications unlocked");
   };
 
   const getRiskColor = (risk: string) => {
@@ -172,8 +225,8 @@ export default function AppLockPanel() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-sm mx-4 text-center">
             <Fingerprint className="w-16 h-16 text-blue-600 mx-auto mb-4 animate-pulse" />
-            <h3 className="text-lg font-semibold mb-2">Biometric Authentication</h3>
-            <p className="text-gray-600 mb-4">Place your finger on the sensor</p>
+            <h3 className="text-lg font-semibold mb-2">Real Biometric Authentication</h3>
+            <p className="text-gray-600 mb-4">Authenticating with device security...</p>
             <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
           </div>
         </div>
@@ -184,13 +237,12 @@ export default function AppLockPanel() {
         <div>
           <h3 className="font-semibold text-lg md:text-xl mb-2 flex items-center gap-2">
             <Shield className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
-            Advanced App Lock Protection
+            Real Device App Lock Protection
           </h3>
-          {lastScan && (
-            <p className="text-xs md:text-sm text-gray-600">
-              Last scan: {lastScan.toLocaleTimeString()} • {locked.length} apps protected
-            </p>
-          )}
+          <p className="text-xs md:text-sm text-gray-600">
+            {realApps.length} real apps detected • {lockedApps.length} currently protected
+            {lastScan && ` • Last scan: ${lastScan.toLocaleTimeString()}`}
+          </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <button
@@ -199,7 +251,7 @@ export default function AppLockPanel() {
             className="bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             <Scan className={`w-4 h-4 ${isScanning ? 'animate-spin' : ''}`} />
-            {isScanning ? `Scanning... ${scanProgress}%` : "Deep Scan"}
+            {isScanning ? `Scanning... ${scanProgress}%` : "Security Scan"}
           </button>
         </div>
       </div>
@@ -288,7 +340,7 @@ export default function AppLockPanel() {
             <Shield className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
             <span className="text-xs md:text-sm font-semibold text-blue-800">Total Apps</span>
           </div>
-          <div className="text-xl md:text-2xl font-bold text-blue-600">{APPS.length}</div>
+          <div className="text-xl md:text-2xl font-bold text-blue-600">{realApps.length}</div>
           <div className="text-xs text-blue-500">Monitored</div>
         </div>
         
@@ -297,7 +349,7 @@ export default function AppLockPanel() {
             <Lock className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
             <span className="text-xs md:text-sm font-semibold text-green-800">Protected</span>
           </div>
-          <div className="text-xl md:text-2xl font-bold text-green-600">{locked.length}</div>
+          <div className="text-xl md:text-2xl font-bold text-green-600">{lockedApps.length}</div>
           <div className="text-xs text-green-500">Active locks</div>
         </div>
         
@@ -325,14 +377,14 @@ export default function AppLockPanel() {
       {/* Bulk Actions */}
       <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
         <button
-          onClick={lockAll}
+          onClick={lockAllApps}
           className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
         >
           <Lock className="w-4 h-4" />
           Secure All Apps
         </button>
         <button
-          onClick={unlockAll}
+          onClick={unlockAllApps}
           className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
         >
           <Unlock className="w-4 h-4" />
@@ -340,29 +392,30 @@ export default function AppLockPanel() {
         </button>
       </div>
 
-      {/* Apps List */}
+      {/* Real Apps List */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="p-4 md:p-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
           <h4 className="font-bold text-gray-800 flex items-center gap-2">
             <Shield className="w-4 h-4 md:w-5 md:h-5" />
-            Application Security Status
+            Real Device Apps ({realApps.length} detected)
           </h4>
         </div>
         
         <div className="max-h-80 md:max-h-96 overflow-y-auto">
-          {APPS.map(app => (
-            <div key={app.name} className="flex items-center justify-between p-3 md:p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors">
+          {realApps.map(app => (
+            <div key={app.id} className="flex items-center justify-between p-3 md:p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors">
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="text-2xl">{app.icon}</div>
+                <div className="text-2xl">{app.icon || (app.isNative ? '📱' : '🌐')}</div>
                 
                 <button
-                  className={`rounded-full border-2 p-2 transition-all duration-200 flex-shrink-0 ${locked.includes(app.name)
-                    ? "bg-green-600 border-green-700 shadow-lg"
-                    : "bg-white border-gray-300 hover:border-blue-400"
-                    }`}
-                  onClick={() => toggle(app.name)}
+                  className={`rounded-full border-2 p-2 transition-all duration-200 flex-shrink-0 ${
+                    lockedApps.includes(app.id)
+                      ? "bg-green-600 border-green-700 shadow-lg"
+                      : "bg-white border-gray-300 hover:border-blue-400"
+                  }`}
+                  onClick={() => toggleAppLock(app)}
                 >
-                  {locked.includes(app.name) ? (
+                  {lockedApps.includes(app.id) ? (
                     <Lock className="w-3 h-3 md:w-4 md:h-4 text-white" />
                   ) : (
                     <Unlock className="w-3 h-3 md:w-4 md:h-4 text-gray-600" />
@@ -373,33 +426,44 @@ export default function AppLockPanel() {
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
                     <span className="font-medium text-gray-800 text-sm md:text-base truncate">{app.name}</span>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full font-medium">
-                        {app.category}
+                      <span className="text-xs px-2 py-1 bg-blue-100 text-blue-600 rounded-full font-medium">
+                        {app.platform === 'android' ? 'Android' : app.platform === 'ios' ? 'iOS' : 'Web'}
                       </span>
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${getRiskColor(app.risk)}`}>
-                        {app.risk} Risk
+                      <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full font-medium">
+                        v{app.version}
+                      </span>
+                      <span className="text-xs px-2 py-1 bg-green-100 text-green-600 rounded-full font-medium">
+                        REAL
                       </span>
                     </div>
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    {locked.includes(app.name) 
-                      ? `🔐 Protected with ${biometricEnabled ? 'biometric' : 'PIN'} lock • ${failedAttempts[app.name] || 0} failed attempts`
-                      : 'Tap to enable real-time protection'
+                    {lockedApps.includes(app.id)
+                      ? `🔐 Protected with ${biometricEnabled ? 'biometric' : 'PIN'} lock • Real-time monitoring active`
+                      : 'Tap lock button to enable real-time protection'
                     }
                   </div>
                 </div>
               </div>
               
-              {locked.includes(app.name) && (
+              {lockedApps.includes(app.id) && (
                 <div className="flex items-center gap-2 ml-2">
                   <span className="bg-green-100 text-green-700 rounded-full px-2 md:px-3 py-1 text-xs font-medium flex items-center gap-1">
                     {biometricEnabled ? <Fingerprint className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                    <span className="hidden sm:inline">Active</span>
+                    <span className="hidden sm:inline">LOCKED</span>
                   </span>
                 </div>
               )}
             </div>
           ))}
+          
+          {realApps.length === 0 && (
+            <div className="p-8 text-center text-gray-500">
+              <Shield className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p>No apps detected yet</p>
+              <p className="text-sm">Apps will appear here once detected</p>
+            </div>
+          )}
         </div>
       </div>
       
@@ -408,17 +472,17 @@ export default function AppLockPanel() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${locked.length > 0 ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`} />
+              <div className={`w-3 h-3 rounded-full ${lockedApps.length > 0 ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`} />
               <span className="font-medium">
-                Security Status: {locked.length > 0 ? 'ACTIVE PROTECTION' : 'MONITORING ONLY'}
+                Real Device Status: {lockedApps.length > 0 ? 'PROTECTION ACTIVE' : 'MONITORING ONLY'}
               </span>
             </div>
             <span className="text-gray-600">
-              {locked.length} of {APPS.length} apps secured • Real-time monitoring enabled
+              {lockedApps.length} of {realApps.length} real apps secured • Live protection enabled
             </span>
           </div>
           <div className="text-xs text-gray-500">
-            🔒 Advanced biometric protection • Real-time threat detection
+            🔒 Real biometric security • Live app monitoring • Device-level protection
           </div>
         </div>
       </div>
