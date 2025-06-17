@@ -1,6 +1,6 @@
-
 import { AppSidebar } from "../components/AppSidebar";
 import { useMobileDetection } from "../hooks/useMobileDetection";
+import { useMobileRouting } from "../hooks/useMobileRouting";
 import { Shield, Smartphone, Globe, Scan, AlertTriangle, FileText, ShieldAlert, Battery, Brain, Lock, MessageCircle } from "lucide-react";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +8,9 @@ import { useNavigate } from "react-router-dom";
 const Index = () => {
   const mobileInfo = useMobileDetection();
   const navigate = useNavigate();
+  
+  // Use mobile routing guard
+  useMobileRouting();
 
   const quickAccessFeatures = [
     {
