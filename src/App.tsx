@@ -17,6 +17,7 @@ import BatteryMonitorPage from "./pages/BatteryMonitorPage";
 import AiDetectionPage from "./pages/AiDetectionPage";
 import AppLockPage from "./pages/AppLockPage";
 import SecurityChatPage from "./pages/SecurityChatPage";
+import PresentationPage from "./pages/PresentationPage";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
       <BrowserRouter basename={import.meta.env.DEV ? "/" : "/app/"}>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/presentation" element={<PresentationPage />} />
           <Route path="/security-status" element={<SecurityStatusPage />} />
           <Route path="/system-monitor" element={<SystemMonitorPage />} />
           <Route path="/apps-scanner" element={<AppsScannerPage />} />
