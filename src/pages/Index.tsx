@@ -1,39 +1,21 @@
 
 import { AppSidebar } from "../components/AppSidebar";
 import { useMobileDetection } from "../hooks/useMobileDetection";
-import { useMobileRouting } from "../hooks/useMobileRouting";
-import { Shield, Smartphone, Globe, Scan, AlertTriangle, FileText, ShieldAlert, Battery, Brain, Lock, MessageCircle, Presentation } from "lucide-react";
+import { Shield, Smartphone, Globe, Scan, AlertTriangle, FileText, ShieldAlert, Battery, Brain, Lock, MessageCircle } from "lucide-react";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const mobileInfo = useMobileDetection();
   const navigate = useNavigate();
-  
-  // Use mobile routing guard
-  useMobileRouting();
 
   const quickAccessFeatures = [
-    {
-      title: "Project Presentation",
-      icon: Presentation,
-      path: "/presentation",
-      description: "View comprehensive project presentation",
-      color: "from-indigo-500 to-indigo-600"
-    },
     {
       title: "Security Status",
       icon: Shield,
       path: "/security-status",
       description: "View real-time security score and status",
       color: "from-green-500 to-green-600"
-    },
-    {
-      title: "File Scanner",
-      icon: FileText,
-      path: "/file-scanner",
-      description: "Scan files for malware",
-      color: "from-orange-500 to-orange-600"
     },
     {
       title: "Apps Scanner",
@@ -56,6 +38,13 @@ const Index = () => {
       path: "/alert-panel",
       description: "View security alerts and warnings",
       color: "from-red-500 to-red-600"
+    },
+    {
+      title: "File Scanner",
+      icon: FileText,
+      path: "/file-scanner",
+      description: "Scan files for malware",
+      color: "from-orange-500 to-orange-600"
     },
     {
       title: "URL Scanner",

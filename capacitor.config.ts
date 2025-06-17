@@ -9,9 +9,6 @@ const config: CapacitorConfig = {
   server: {
     url: "https://a2bfc008-72c7-4db3-8132-9fa627ff0763.lovableproject.com?forceHideBadge=true",
     cleartext: true,
-    allowNavigation: [
-      "https://a2bfc008-72c7-4db3-8132-9fa627ff0763.lovableproject.com"
-    ]
   },
   android: {
     allowMixedContent: true,
@@ -24,10 +21,6 @@ const config: CapacitorConfig = {
     navigationBarColor: "#1e40af",
     hideLogs: false,
     loggingBehavior: "debug"
-  },
-  ios: {
-    contentInset: "automatic",
-    backgroundColor: "#ffffff"
   },
   plugins: {
     SplashScreen: {

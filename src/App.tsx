@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import SecurityStatusPage from "./pages/SecurityStatusPage";
@@ -17,7 +17,6 @@ import BatteryMonitorPage from "./pages/BatteryMonitorPage";
 import AiDetectionPage from "./pages/AiDetectionPage";
 import AppLockPage from "./pages/AppLockPage";
 import SecurityChatPage from "./pages/SecurityChatPage";
-import PresentationPage from "./pages/PresentationPage";
 
 const queryClient = new QueryClient();
 
@@ -26,10 +25,9 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter basename={import.meta.env.DEV ? "/" : "/app/"}>
+      <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/presentation" element={<PresentationPage />} />
           <Route path="/security-status" element={<SecurityStatusPage />} />
           <Route path="/system-monitor" element={<SystemMonitorPage />} />
           <Route path="/apps-scanner" element={<AppsScannerPage />} />
@@ -41,8 +39,8 @@ const App = () => (
           <Route path="/ai-detection" element={<AiDetectionPage />} />
           <Route path="/app-lock" element={<AppLockPage />} />
           <Route path="/security-chat" element={<SecurityChatPage />} />
-          {/* Redirect any unknown routes to home */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
